@@ -348,7 +348,7 @@ async function DashboardContent() {
 
 export default function DashboardPage() {
   return (
-    <div className="pt-6 sm:pt-8">
+    <div>
       <h1 className="text-3xl font-semibold tracking-tight text-white drop-shadow-sm">
         Dashboard
       </h1>

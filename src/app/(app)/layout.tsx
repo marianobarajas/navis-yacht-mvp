@@ -24,7 +24,7 @@ export default async function AppLayout({
         />
         <MainTabs />
       </header>
-      <main className="mx-auto max-w-7xl px-6 pb-12 pt-[var(--app-header-offset)] sm:px-8 lg:px-12">
+      <main className="mx-auto max-w-7xl px-6 pb-12 pt-[calc(var(--app-header-offset)+1.5rem)] sm:px-8 sm:pt-[calc(var(--app-header-offset)+2rem)] lg:px-12">
         {children}
       </main>
     </div>

@@ -34,6 +34,7 @@
   /*
    * Fixed header height = TopNav (1px border + h-16) + MainTabs row (py-3 + text-sm line ~ 2.75rem) + tab border (1px).
    * Must match real DOM — wrong values leave a strip of --apple-bg between tabs and dashboard hero.
+   * Main content adds 1.5rem (sm: 2rem) below that — same visual gap as the Dashboard page title used to use alone.
    */
   --app-header-offset: calc(2px + 4rem + 2.75rem);
 
