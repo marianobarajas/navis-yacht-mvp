@@ -34,7 +34,11 @@ export function CrewAddMemberCard({
   const [expanded, setExpanded] = useState(false);
 
   function submitWith(
-    fn: (fd: FormData) => Promise<{ error?: string | null; devInviteUrl?: string }>
+    fn: (fd: FormData) => Promise<{
+      error?: string | null;
+      devInviteUrl?: string;
+      resendEmailId?: string;
+    }>
   ) {
     const form = document.getElementById("crew-create-form") as HTMLFormElement | null;
     if (!form) return;
@@ -55,8 +59,19 @@ export function CrewAddMemberCard({
             `For now, copy this link: ${res.devInviteUrl}`,
           ].join(" ")
         );
+      } else if (fn === sendUserInvite) {
+        const id = (res as { resendEmailId?: string }).resendEmailId;
+        setOk(
+          [
+            "Resend accepted the message — if it does not arrive in a few minutes, check spam.",
+            id ? `Resend log id: ${id} (find it under resend.com → Logs).` : "",
+            "On a new Resend account, sending from onboarding@resend.dev often only delivers to the inbox of the email you used to sign up at Resend until you verify your own domain and set RESEND_FROM.",
+          ]
+            .filter(Boolean)
+            .join(" ")
+        );
       } else {
-        setOk(fn === sendUserInvite ? "Invite sent." : "User created.");
+        setOk("User created.");
       }
       form.reset();
       router.refresh();

@@ -1,20 +1,19 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useRouter } from "next/navigation";
-import { useState, useTransition, type FormEvent, Suspense } from "react";
+import { useState, type FormEvent, Suspense } from "react";
 import { acceptUserInvite } from "@/actions/users";
 
 function FormBody() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token") ?? "";
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
+  /** Do not use useTransition with async server actions — isPending often never clears. */
+  const [submitting, setSubmitting] = useState(false);
 
-  function onSubmit(e: FormEvent) {
+  async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
     if (!token) {
@@ -29,15 +28,21 @@ function FormBody() {
       setError("Passwords do not match.");
       return;
     }
-    startTransition(async () => {
+    setSubmitting(true);
+    try {
       const res = await acceptUserInvite(token, password);
       if (res?.error) {
         setError(res.error);
         return;
       }
-      router.push("/signin?invited=1");
-      router.refresh();
-    });
+      // Full navigation: reliable after server actions (client router sometimes does not update).
+      window.location.assign("/signin?invited=1");
+    } catch (err) {
+      console.error(err);
+      setError("Something went wrong. Try again or open the invite link once more.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -69,10 +74,10 @@ function FormBody() {
       {error ? <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</div> : null}
       <button
         type="submit"
-        disabled={pending}
+        disabled={submitting}
         className="w-full rounded-[var(--apple-radius)] bg-[var(--apple-accent)] py-2.5 text-sm font-semibold text-white hover:bg-[var(--apple-accent-hover)] disabled:opacity-60"
       >
-        {pending ? "Saving…" : "Accept invite"}
+        {submitting ? "Saving…" : "Accept invite"}
       </button>
     </form>
   );

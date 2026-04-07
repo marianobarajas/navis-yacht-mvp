@@ -60,6 +60,21 @@ export function buildInviteEmailHtml(params: { name: string; inviteUrl: string }
 </html>`;
 }
 
+/** Plain-text part improves multipart MIME; some filters prefer it alongside HTML. */
+export function buildInviteEmailText(params: { name: string; inviteUrl: string }) {
+  const { name, inviteUrl } = params;
+  return `Hi ${name},
+
+You've been invited to join Navis. Open this link to accept your invite and set your password:
+
+${inviteUrl}
+
+This link expires in 7 days.
+
+If you didn't expect this message, you can ignore it.
+`;
+}
+
 function escapeHtml(s: string) {
   return s
     .replace(/&/g, "&amp;")
@@ -85,6 +100,7 @@ export async function sendInviteEmail(params: { to: string; name: string; invite
   const from = (process.env.RESEND_FROM || "Navis <onboarding@resend.dev>").trim();
   const inviteUrl = `${appBaseUrl()}/accept-invite?token=${encodeURIComponent(params.inviteToken)}`;
   const html = buildInviteEmailHtml({ name: params.name, inviteUrl });
+  const text = buildInviteEmailText({ name: params.name, inviteUrl });
 
   if (!key) {
     console.warn("[mail] RESEND_API_KEY is not set; invite email not sent. URL:", inviteUrl);
@@ -108,6 +124,7 @@ export async function sendInviteEmail(params: { to: string; name: string; invite
       from,
       to: [params.to],
       subject: "Welcome to Navis — accept your invite",
+      text,
       html,
     }),
   });
@@ -121,5 +138,16 @@ export async function sendInviteEmail(params: { to: string; name: string; invite
     };
   }
 
-  return { error: null };
+  let resendEmailId: string | undefined;
+  try {
+    const j = (await res.json()) as { data?: { id?: string } };
+    resendEmailId = typeof j?.data?.id === "string" ? j.data.id : undefined;
+  } catch {
+    /* empty body */
+  }
+  if (resendEmailId) {
+    console.info("[mail] Resend queued email id:", resendEmailId, "to:", params.to);
+  }
+
+  return { error: null, resendEmailId };
 }

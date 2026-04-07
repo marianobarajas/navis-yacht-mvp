@@ -560,7 +560,11 @@ export async function sendUserInvite(formData: FormData) {
 
   revalidatePath("/admin/users");
   revalidatePath("/crew");
-  return { error: null, devInviteUrl: mail.devInviteUrl };
+  return {
+    error: null,
+    devInviteUrl: mail.devInviteUrl,
+    resendEmailId: mail.resendEmailId,
+  };
 }
 
 /** Complete invite: set password and clear invite token. */
