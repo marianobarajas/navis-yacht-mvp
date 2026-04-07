@@ -27,24 +27,42 @@ export async function listPlatformOrganizations() {
   return { error: null, data: orgs };
 }
 
-export async function listPlatformTenantUsers() {
+export async function getPlatformOrganizationById(organizationId: string) {
   const session = await requirePlatformSession();
   if (!session) return { error: "Unauthorized", data: null };
 
-  const users = await prisma.user.findMany({
-    where: { isPlatformAdmin: false, organizationId: { not: null } },
-    orderBy: [{ organization: { name: "asc" } }, { name: "asc" }],
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      role: true,
-      isActive: true,
-      organization: { select: { id: true, name: true, slug: true } },
+  const org = await prisma.organization.findFirst({
+    where: { id: organizationId },
+    include: {
+      users: {
+        where: { isPlatformAdmin: false },
+        orderBy: { name: "asc" },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          isActive: true,
+          createdAt: true,
+        },
+      },
+      yachts: {
+        orderBy: { name: "asc" },
+        select: {
+          id: true,
+          name: true,
+          registrationNumber: true,
+          marina: true,
+          model: true,
+          year: true,
+        },
+      },
+      _count: { select: { users: true, yachts: true } },
     },
   });
 
-  return { error: null, data: users };
+  if (!org) return { error: "Not found", data: null };
+  return { error: null, data: org };
 }
 
 export async function createTenantFromPlatform(formData: FormData) {
@@ -69,6 +87,6 @@ export async function createTenantFromPlatform(formData: FormData) {
     return { error: result.error, slug: null as string | null };
   }
 
-  revalidatePath("/platform");
+  revalidatePath("/platform", "layout");
   return { error: null as null, slug: result.slug };
 }
