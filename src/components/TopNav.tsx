@@ -153,15 +153,13 @@ export function TopNav({
             <div className="border-b border-[var(--apple-border)] px-4 py-3 text-sm text-[var(--apple-text-secondary)]">
               {user?.email}
             </div>
-            {(user as { role?: string })?.role !== "ADMIN" && (
-              <Link
-                href="/profile"
-                className="block px-4 py-2.5 text-sm text-[var(--apple-text-primary)] transition-colors hover:bg-[var(--apple-bg-subtle)]"
-                onClick={() => setUserMenuOpen(false)}
-              >
-                View Profile
-              </Link>
-            )}
+            <Link
+              href="/profile"
+              className="block px-4 py-2.5 text-sm text-[var(--apple-text-primary)] transition-colors hover:bg-[var(--apple-bg-subtle)]"
+              onClick={() => setUserMenuOpen(false)}
+            >
+              View Profile
+            </Link>
             {((user as { role?: string })?.role === "ADMIN" ||
               (user as { role?: string })?.role === "MANAGER") && (
               <Link
