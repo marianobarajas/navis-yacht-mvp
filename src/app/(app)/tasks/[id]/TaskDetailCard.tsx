@@ -112,7 +112,7 @@ export function TaskDetailCard({
         </button>
       </div>
 
-      {/* Raised content: priority, yacht, status, description, details */}
+      {/* Raised content: priority, yacht, status, details (+ Notes in grid) */}
       <div className="p-5 sm:p-6">
         <div className="flex flex-wrap items-center gap-2">
           <PriorityBadge priority={workOrder.priority} />
@@ -133,14 +133,6 @@ export function TaskDetailCard({
             canUpdate={canEdit}
           />
         </div>
-
-        {workOrder.description && !open ? (
-          <div className="mt-3 rounded-[var(--apple-radius)] bg-[var(--apple-bg-subtle)] p-4">
-            <p className="text-sm leading-relaxed text-[var(--apple-text-secondary)]">
-              {workOrder.description}
-            </p>
-          </div>
-        ) : null}
 
         {!open ? (
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
