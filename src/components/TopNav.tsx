@@ -20,11 +20,14 @@ export function TopNav({
   user,
   notifications = [],
   platformMode = false,
+  organizationName = null,
 }: {
   user: { name?: string | null; email?: string | null; profileImage?: string | null };
   notifications?: NavNotification[];
   /** Software operator header: no fleet notifications, logo → /platform */
   platformMode?: boolean;
+  /** Shown after the logo: "Logo | Organization name" (tenant app). Ignored when platformMode (shows "Platform"). */
+  organizationName?: string | null;
 }) {
   const router = useRouter();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -57,6 +60,8 @@ export function TopNav({
           : "User";
   const profileImage = user?.profileImage ?? null;
 
+  const headerSubtitle = platformMode ? "Platform" : organizationName?.trim() || null;
+
   async function handleNotificationClick(n: NavNotification) {
     setNotificationsOpen(false);
     if (n.link) router.push(n.link);
@@ -66,21 +71,39 @@ export function TopNav({
   return (
     <div className="shrink-0 border-b border-[var(--apple-border-strong)] bg-white shadow-[0_2px_12px_rgba(26,61,74,0.08)]">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 sm:px-8 lg:px-12">
-      <div className="flex items-center gap-8">
-        <Link
-          href={platformMode ? "/platform" : "/dashboard"}
-          className="flex items-center transition-opacity hover:opacity-90"
-          title="NAVIS"
-        >
-          <Image
-            src="/navis-logo.jpg"
-            alt="NAVIS"
-            width={1024}
-            height={370}
-            className="h-12 w-auto max-w-[min(100vw-12rem,22rem)] object-contain object-left sm:h-[3.35rem]"
-            priority
-          />
-        </Link>
+      <div className="flex min-w-0 max-w-[min(100%,70vw)] items-center gap-2 sm:max-w-none sm:gap-3 lg:gap-8">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+          <Link
+            href={platformMode ? "/platform" : "/dashboard"}
+            className="flex shrink-0 items-center transition-opacity hover:opacity-90"
+            title="NAVIS"
+          >
+            <Image
+              src="/navis-logo.jpg"
+              alt="NAVIS"
+              width={1024}
+              height={370}
+              className="h-12 w-auto max-w-[min(100vw-14rem,18rem)] object-contain object-left sm:h-[3.35rem] sm:max-w-[22rem]"
+              priority
+            />
+          </Link>
+          {headerSubtitle ? (
+            <>
+              <span
+                className="shrink-0 text-lg font-light leading-none text-[var(--apple-text-tertiary)] sm:text-xl"
+                aria-hidden
+              >
+                |
+              </span>
+              <span
+                className="truncate text-sm font-semibold tracking-tight text-[var(--apple-text-primary)] sm:text-base"
+                title={headerSubtitle}
+              >
+                {headerSubtitle}
+              </span>
+            </>
+          ) : null}
+        </div>
       </div>
 
       <div className="flex items-center gap-2">
