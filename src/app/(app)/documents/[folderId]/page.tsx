@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { requireOrganizationId } from "@/lib/organization";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { listDocuments } from "@/actions/documents";
@@ -10,6 +11,9 @@ import { DocumentsClient } from "./DocumentsClient";
 export default async function FolderPage(props: { params?: any }) {
   const session = await getServerSession(authOptions);
   if (!session?.user) throw new Error("Unauthorized");
+
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) throw new Error("Unauthorized");
 
   const params = await props.params;
 
@@ -24,8 +28,8 @@ export default async function FolderPage(props: { params?: any }) {
     return notFound();
   }
 
-  const folder = await prisma.documentFolder.findUnique({
-    where: { id: folderId },
+  const folder = await prisma.documentFolder.findFirst({
+    where: { id: folderId, organizationId },
     include: {
       yacht: { select: { id: true, name: true } },
       createdBy: { select: { id: true, name: true } },

@@ -10,14 +10,15 @@ import {
   SUPABASE_STORAGE_BUCKET,
   ensureStorageBucket,
 } from "@/lib/supabaseStorage";
+import { requireOrganizationId } from "@/lib/organization";
 
 function safeFileName(name: string) {
   return name.replaceAll("/", "_").replaceAll("\\", "_").trim();
 }
 
-async function canAccessWorkOrder(user: any, workOrderId: string) {
-  const wo = await prisma.workOrder.findUnique({
-    where: { id: workOrderId },
+async function canAccessWorkOrder(user: any, workOrderId: string, organizationId: string) {
+  const wo = await prisma.workOrder.findFirst({
+    where: { id: workOrderId, yacht: { organizationId } },
     select: { id: true, createdByUserId: true, assignedToUserId: true },
   });
   if (!wo) return { ok: false as const, error: "Work order not found" };
@@ -41,12 +42,15 @@ export async function uploadWorkOrderAttachment(
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized", data: null };
 
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized", data: null };
+
   const file = formData.get("file") as File | null;
   if (!file || !(file instanceof File)) {
     return { error: "No file provided", data: null };
   }
 
-  const access = await canAccessWorkOrder(session.user as any, workOrderId);
+  const access = await canAccessWorkOrder(session.user as any, workOrderId, organizationId);
   if (!access.ok) return { error: access.error, data: null };
 
   if (!supabaseAdmin) {
@@ -120,7 +124,10 @@ export async function listWorkOrderAttachments(workOrderId: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized", data: null };
 
-  const access = await canAccessWorkOrder(session.user as any, workOrderId);
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized", data: null };
+
+  const access = await canAccessWorkOrder(session.user as any, workOrderId, organizationId);
   if (!access.ok) return { error: access.error, data: null };
 
   const items = await prisma.workOrderAttachment.findMany({
@@ -145,13 +152,16 @@ export async function getWorkOrderDownloadUrl(attachmentId: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized", data: null };
 
-  const att = await prisma.workOrderAttachment.findUnique({
-    where: { id: attachmentId },
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized", data: null };
+
+  const att = await prisma.workOrderAttachment.findFirst({
+    where: { id: attachmentId, workOrder: { yacht: { organizationId } } },
     select: { id: true, workOrderId: true, storageKey: true, url: true, fileName: true },
   });
   if (!att) return { error: "Not found", data: null };
 
-  const access = await canAccessWorkOrder(session.user as any, att.workOrderId);
+  const access = await canAccessWorkOrder(session.user as any, att.workOrderId, organizationId);
   if (!access.ok) return { error: access.error, data: null };
 
   if (att.url && typeof att.url === "string" && att.url.startsWith("http")) {

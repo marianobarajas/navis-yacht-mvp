@@ -11,13 +11,18 @@ import {
 import type { Priority } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { removeYachtCoverFromStorage, uploadYachtCoverFile } from "@/lib/yachtCoverStorage";
+import { requireOrganizationId } from "@/lib/organization";
 
 export async function listYachts() {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized", data: null };
 
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized", data: null };
+
   if (isManagerOrAbove(session.user.role)) {
     const yachts = await prisma.yacht.findMany({
+      where: { organizationId },
       orderBy: { name: "asc" },
       include: {
         assignments: { include: { user: { select: { id: true, name: true, email: true, profileImage: true } } } },
@@ -27,7 +32,10 @@ export async function listYachts() {
   }
 
   const assignments = await prisma.assignment.findMany({
-    where: { userId: session.user.id },
+    where: {
+      userId: session.user.id,
+      yacht: { organizationId },
+    },
     include: {
       yacht: {
         include: {
@@ -44,8 +52,11 @@ export async function getYachtById(id: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized", data: null };
 
-  const yacht = await prisma.yacht.findUnique({
-    where: { id },
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized", data: null };
+
+  const yacht = await prisma.yacht.findFirst({
+    where: { id, organizationId },
     include: {
       assignments: { include: { user: { select: { id: true, name: true, email: true, role: true } } } },
     },
@@ -66,6 +77,9 @@ export async function createYacht(formData: FormData) {
   if (!session?.user) return { error: "Unauthorized" };
   if (!canCreateYacht(session.user.role)) return { error: "Forbidden" };
 
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized" };
+
   const name = formData.get("name") as string;
   const registrationNumber = formData.get("registrationNumber") as string;
   const model = formData.get("model") as string;
@@ -83,6 +97,7 @@ export async function createYacht(formData: FormData) {
 
   const yacht = await prisma.yacht.create({
     data: {
+      organizationId,
       name: name.trim(),
       registrationNumber: registrationNumber.trim(),
       model: model.trim(),
@@ -121,7 +136,10 @@ export async function updateYacht(yachtId: string, formData: FormData) {
   if (!session?.user) return { error: "Unauthorized" };
   if (!canCreateYacht(session.user.role)) return { error: "Forbidden" };
 
-  const existing = await prisma.yacht.findUnique({ where: { id: yachtId } });
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized" };
+
+  const existing = await prisma.yacht.findFirst({ where: { id: yachtId, organizationId } });
   if (!existing) return { error: "Not found" };
 
   const name = formData.get("name") as string;
@@ -175,6 +193,15 @@ export async function assignYachtToUser(yachtId: string, userId: string) {
   if (!session?.user) return { error: "Unauthorized" };
   if (!canAssignYacht(session.user.role)) return { error: "Forbidden" };
 
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized" };
+
+  const [yacht, crew] = await Promise.all([
+    prisma.yacht.findFirst({ where: { id: yachtId, organizationId }, select: { id: true } }),
+    prisma.user.findFirst({ where: { id: userId, organizationId }, select: { id: true } }),
+  ]);
+  if (!yacht || !crew) return { error: "Yacht or user not found in your organization" };
+
   await prisma.assignment.upsert({
     where: {
       yachtId_userId: { yachtId, userId },
@@ -193,6 +220,12 @@ export async function unassignYachtFromUser(yachtId: string, userId: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized" };
   if (!canAssignYacht(session.user.role)) return { error: "Forbidden" };
+
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized" };
+
+  const yacht = await prisma.yacht.findFirst({ where: { id: yachtId, organizationId }, select: { id: true } });
+  if (!yacht) return { error: "Not found" };
 
   await prisma.assignment.delete({
     where: {
@@ -254,8 +287,10 @@ export async function deleteYacht(yachtId: string) {
 
   if (!yachtId?.trim()) return { error: "Missing yachtId" };
 
-  // Optional: verify exists
-  const existing = await prisma.yacht.findUnique({ where: { id: yachtId } });
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized" };
+
+  const existing = await prisma.yacht.findFirst({ where: { id: yachtId, organizationId } });
   if (!existing) return { error: "Not found" };
 
   await removeYachtCoverFromStorage(existing.coverImageUrl);

@@ -5,13 +5,18 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { isManagerOrAbove } from "@/lib/rbac";
+import { requireOrganizationId } from "@/lib/organization";
 import type { LogEntryType } from "@prisma/client";
 
 export async function listRecentLogs(limit = 50) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized", data: null };
 
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized", data: null };
+
   const logs = await prisma.logEntry.findMany({
+    where: { yacht: { organizationId } },
     orderBy: { createdAt: "desc" },
     take: limit,
     include: {
@@ -28,11 +33,14 @@ export async function updateLogEntry(logId: string, formData: FormData) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized" };
 
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized" };
+
   const role = (session.user as any).role as string;
   const userId = (session.user as any).id as string;
 
-  const existing = await prisma.logEntry.findUnique({
-    where: { id: logId },
+  const existing = await prisma.logEntry.findFirst({
+    where: { id: logId, yacht: { organizationId } },
     select: { id: true, authorUserId: true },
   });
   if (!existing) return { error: "Not found" };
@@ -66,11 +74,14 @@ export async function deleteLogEntry(logId: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized" };
 
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized" };
+
   const role = (session.user as any).role as string;
   const userId = (session.user as any).id as string;
 
-  const existing = await prisma.logEntry.findUnique({
-    where: { id: logId },
+  const existing = await prisma.logEntry.findFirst({
+    where: { id: logId, yacht: { organizationId } },
     select: { id: true, authorUserId: true },
   });
   if (!existing) return { error: "Not found" };

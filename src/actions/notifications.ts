@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { isManagerOrAbove } from "@/lib/rbac";
+import { requireOrganizationId } from "@/lib/organization";
+import { isPlatformAdminSession } from "@/lib/platformAdmin";
 import type { NotificationType } from "@prisma/client";
 
 export type NotificationPreferences = {
@@ -58,13 +60,22 @@ export async function getNotificationsForCurrentUser() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return { error: "Unauthorized", data: null };
 
+  if (isPlatformAdminSession(session)) {
+    return { error: null, data: [] };
+  }
+
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized", data: null };
+
   const userId = session.user.id;
   const role = (session.user as { role?: string })?.role;
 
-  const whereClause =
-    role && isManagerOrAbove(role)
+  const whereClause = {
+    yacht: { organizationId },
+    ...(role && isManagerOrAbove(role)
       ? { OR: [{ createdByUserId: userId }, { assignedToUserId: userId }] }
-      : { assignedToUserId: userId };
+      : { assignedToUserId: userId }),
+  };
 
   const [userPrefs, dbNotifications, dueTodayOrders] = await Promise.all([
     prisma.user.findUnique({

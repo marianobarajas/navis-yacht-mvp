@@ -2,6 +2,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { isManagerOrAbove, canCreateWorkOrder } from "@/lib/rbac";
+import { requireOrganizationId } from "@/lib/organization";
+import { calendarEventOrgWhere } from "@/lib/calendarScopes";
 import CalendarView from "./CalendarView";
 
 export default async function CalendarPage({
@@ -12,6 +14,9 @@ export default async function CalendarPage({
   const session = await getServerSession(authOptions);
   if (!session?.user) throw new Error("Unauthorized");
 
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) throw new Error("Unauthorized");
+
   const params = await searchParams;
   const initialDate = params.date ?? null;
 
@@ -21,6 +26,7 @@ export default async function CalendarPage({
 
   const [events, tasks, yachts, users] = await Promise.all([
     prisma.calendarEvent.findMany({
+      where: calendarEventOrgWhere(organizationId),
       orderBy: { startAt: "desc" },
       take: 500,
       select: {
@@ -34,6 +40,7 @@ export default async function CalendarPage({
     }),
     prisma.workOrder.findMany({
       where: {
+        yacht: { organizationId },
         OR: [
           { startDate: { not: null } },
           { dueDate: { not: null } },
@@ -56,11 +63,12 @@ export default async function CalendarPage({
       },
     }),
     prisma.yacht.findMany({
+      where: { organizationId },
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),
     prisma.user.findMany({
-      where: { isActive: true },
+      where: { isActive: true, organizationId },
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),

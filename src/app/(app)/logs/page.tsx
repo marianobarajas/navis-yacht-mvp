@@ -5,6 +5,7 @@ import { listExpenseLogsByYacht } from "@/actions/expenseLogs";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { canCreateWorkOrder } from "@/lib/rbac";
+import { requireOrganizationId } from "@/lib/organization";
 import { ExpenseLogsView } from "./ExpenseLogsView";
 
 function mapExpenseStatusForClient(log: { status?: string | null }): string {
@@ -23,6 +24,9 @@ export default async function LogsPage({
   const session = await getServerSession(authOptions);
   if (!session?.user) redirect("/signin");
 
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) redirect("/signin");
+
   const params = await searchParams;
   const role = (session.user as any).role as string;
   const canCreateTask = canCreateWorkOrder(role);
@@ -30,7 +34,7 @@ export default async function LogsPage({
   const [yachtsRes, users] = await Promise.all([
     listYachts(),
     prisma.user.findMany({
-      where: { isActive: true },
+      where: { isActive: true, organizationId },
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),

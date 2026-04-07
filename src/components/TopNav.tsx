@@ -19,9 +19,12 @@ export type NavNotification = {
 export function TopNav({
   user,
   notifications = [],
+  platformMode = false,
 }: {
   user: { name?: string | null; email?: string | null; profileImage?: string | null };
   notifications?: NavNotification[];
+  /** Software operator header: no fleet notifications, logo → /platform */
+  platformMode?: boolean;
 }) {
   const router = useRouter();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -43,7 +46,15 @@ export function TopNav({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const roleLabel = (user as { role?: string })?.role === "ADMIN" ? "Admin" : (user as { role?: string })?.role === "MANAGER" ? "Manager" : (user as { role?: string })?.role === "TECHNICIAN" ? "Technician" : "User";
+  const roleLabel = platformMode
+    ? "Platform"
+    : (user as { role?: string })?.role === "ADMIN"
+      ? "Admin"
+      : (user as { role?: string })?.role === "MANAGER"
+        ? "Manager"
+        : (user as { role?: string })?.role === "TECHNICIAN"
+          ? "Technician"
+          : "User";
   const profileImage = user?.profileImage ?? null;
 
   async function handleNotificationClick(n: NavNotification) {
@@ -57,7 +68,7 @@ export function TopNav({
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 sm:px-8 lg:px-12">
       <div className="flex items-center gap-8">
         <Link
-          href="/dashboard"
+          href={platformMode ? "/platform" : "/dashboard"}
           className="flex items-center transition-opacity hover:opacity-90"
           title="NAVIS"
         >
@@ -74,6 +85,7 @@ export function TopNav({
 
       <div className="flex items-center gap-2">
         {/* Notification bell – right side, next to user status */}
+        {!platformMode ? (
         <div className="relative" ref={notificationsRef}>
           <button
             type="button"
@@ -127,6 +139,7 @@ export function TopNav({
             </div>
           )}
         </div>
+        ) : null}
 
         <div className="relative" ref={userMenuRef}>
         <button
@@ -153,15 +166,18 @@ export function TopNav({
             <div className="border-b border-[var(--apple-border)] px-4 py-3 text-sm text-[var(--apple-text-secondary)]">
               {user?.email}
             </div>
-            <Link
-              href="/profile"
-              className="block px-4 py-2.5 text-sm text-[var(--apple-text-primary)] transition-colors hover:bg-[var(--apple-bg-subtle)]"
-              onClick={() => setUserMenuOpen(false)}
-            >
-              View Profile
-            </Link>
-            {((user as { role?: string })?.role === "ADMIN" ||
-              (user as { role?: string })?.role === "MANAGER") && (
+            {!platformMode ? (
+              <Link
+                href="/profile"
+                className="block px-4 py-2.5 text-sm text-[var(--apple-text-primary)] transition-colors hover:bg-[var(--apple-bg-subtle)]"
+                onClick={() => setUserMenuOpen(false)}
+              >
+                View Profile
+              </Link>
+            ) : null}
+            {!platformMode &&
+            ((user as { role?: string })?.role === "ADMIN" ||
+              (user as { role?: string })?.role === "MANAGER") ? (
               <Link
                 href="/admin/users"
                 className="block px-4 py-2.5 text-sm text-[var(--apple-text-primary)] transition-colors hover:bg-[var(--apple-bg-subtle)]"
@@ -169,7 +185,7 @@ export function TopNav({
               >
                 Admin
               </Link>
-            )}
+            ) : null}
             <button
               type="button"
               onClick={() => signOut({ callbackUrl: "/signin" })}

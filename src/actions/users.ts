@@ -9,6 +9,7 @@ import { canAssignYacht, canCreateUser } from "@/lib/rbac";
 import { sendInviteEmail } from "@/lib/mail";
 import type { Role, ShiftStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { requireOrganizationId } from "@/lib/organization";
 
 function canManageUsers(role: Role) {
   return role === "ADMIN" || role === "MANAGER";
@@ -18,10 +19,14 @@ export async function listUsers() {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized", data: null };
 
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized", data: null };
+
   const role = session.user.role as Role;
   if (!canManageUsers(role)) return { error: "Forbidden", data: null };
 
   const users = await prisma.user.findMany({
+    where: { organizationId },
     orderBy: { createdAt: "desc" },
     select: {
       id: true,
@@ -45,11 +50,15 @@ export async function listCrew(filters?: {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized", data: null };
 
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized", data: null };
+
   const where: {
+    organizationId: string;
     isActive?: boolean;
     role?: Role;
     shiftStatus?: ShiftStatus;
-  } = {};
+  } = { organizationId };
 
   // Por default: solo activos
   if (!filters?.includeInactive) where.isActive = true;
@@ -84,11 +93,14 @@ export async function getUserWithAssignments(userId: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized", data: null };
 
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized", data: null };
+
   const role = session.user.role as Role;
   if (!canManageUsers(role)) return { error: "Forbidden", data: null };
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
+  const user = await prisma.user.findFirst({
+    where: { id: userId, organizationId },
     select: {
       id: true,
       name: true,
@@ -198,6 +210,9 @@ export async function createUser(formData: FormData) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized" };
 
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized" };
+
   const myRole = session.user.role as Role;
   if (!canCreateUser(myRole)) return { error: "Forbidden" };
 
@@ -225,13 +240,15 @@ export async function createUser(formData: FormData) {
       email,
       passwordHash,
       role,
+      organizationId,
+      isPlatformAdmin: false,
     },
     select: { id: true },
   });
 
   if (initialYachtId && canAssignYacht(myRole)) {
-    const yacht = await prisma.yacht.findUnique({
-      where: { id: initialYachtId },
+    const yacht = await prisma.yacht.findFirst({
+      where: { id: initialYachtId, organizationId },
       select: { id: true },
     });
     if (yacht) {
@@ -255,11 +272,14 @@ export async function deactivateUser(userId: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized" };
 
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized" };
+
   const myRole = session.user.role as Role;
   if (!canManageUsers(myRole)) return { error: "Forbidden" };
 
-  const target = await prisma.user.findUnique({
-    where: { id: userId },
+  const target = await prisma.user.findFirst({
+    where: { id: userId, organizationId },
     select: { id: true, role: true },
   });
   if (!target) return { error: "User not found" };
@@ -287,14 +307,17 @@ export async function deleteUserPermanently(userId: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return { error: "Unauthorized" };
 
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized" };
+
   const myRole = session.user.role as Role;
   if (!canManageUsers(myRole)) return { error: "Forbidden" };
 
   const actorId = session.user.id;
   if (userId === actorId) return { error: "You cannot delete your own account" };
 
-  const target = await prisma.user.findUnique({
-    where: { id: userId },
+  const target = await prisma.user.findFirst({
+    where: { id: userId, organizationId },
     select: { id: true, role: true },
   });
   if (!target) return { error: "User not found" };
@@ -305,7 +328,7 @@ export async function deleteUserPermanently(userId: string) {
 
   if (target.role === "ADMIN") {
     const otherAdmins = await prisma.user.count({
-      where: { role: "ADMIN", id: { not: userId } },
+      where: { role: "ADMIN", id: { not: userId }, organizationId },
     });
     if (otherAdmins === 0) return { error: "Cannot delete the last administrator" };
   }
@@ -349,11 +372,14 @@ export async function reactivateUser(userId: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized" };
 
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized" };
+
   const myRole = session.user.role as Role;
   if (!canManageUsers(myRole)) return { error: "Forbidden" };
 
-  const target = await prisma.user.findUnique({
-    where: { id: userId },
+  const target = await prisma.user.findFirst({
+    where: { id: userId, organizationId },
     select: { id: true, role: true },
   });
   if (!target) return { error: "User not found" };
@@ -381,6 +407,9 @@ export async function updateUser(userId: string, formData: FormData) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized" };
 
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized" };
+
   const actorRole = (session.user as any).role as Role;
   if (actorRole !== "ADMIN" && actorRole !== "MANAGER") return { error: "Forbidden" };
 
@@ -401,8 +430,8 @@ export async function updateUser(userId: string, formData: FormData) {
   const allowedShift = ["ON_SHIFT", "OFF_DUTY", "UNAVAILABLE"];
   if (shiftStatus && !allowedShift.includes(shiftStatus)) return { error: "Invalid shift status" };
 
-  const target = await prisma.user.findUnique({
-    where: { id: userId },
+  const target = await prisma.user.findFirst({
+    where: { id: userId, organizationId },
     select: { id: true, role: true, email: true },
   });
   if (!target) return { error: "User not found" };
@@ -440,11 +469,14 @@ export async function resetUserPassword(userId: string, newPassword: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized" };
 
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized" };
+
   const myRole = session.user.role as Role;
   if (myRole !== "ADMIN" && myRole !== "MANAGER") return { error: "Forbidden" };
 
-  const target = await prisma.user.findUnique({
-    where: { id: userId },
+  const target = await prisma.user.findFirst({
+    where: { id: userId, organizationId },
     select: { id: true, role: true },
   });
   if (!target) return { error: "User not found" };
@@ -475,11 +507,14 @@ export async function updateUserPermissionOverrides(
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized" };
 
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized" };
+
   const myRole = session.user.role as Role;
   if (myRole !== "ADMIN" && myRole !== "MANAGER") return { error: "Forbidden" };
 
-  const target = await prisma.user.findUnique({
-    where: { id: userId },
+  const target = await prisma.user.findFirst({
+    where: { id: userId, organizationId },
     select: { id: true, role: true },
   });
   if (!target) return { error: "User not found" };
@@ -501,6 +536,9 @@ const INVITE_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000;
 export async function sendUserInvite(formData: FormData) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized" };
+
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized" };
 
   const myRole = session.user.role as Role;
   if (!canCreateUser(myRole)) return { error: "Forbidden" };
@@ -529,6 +567,8 @@ export async function sendUserInvite(formData: FormData) {
       email,
       passwordHash: placeholderPassword,
       role,
+      organizationId,
+      isPlatformAdmin: false,
       inviteToken,
       inviteTokenExpiresAt: new Date(Date.now() + INVITE_EXPIRY_MS),
     },
@@ -536,8 +576,8 @@ export async function sendUserInvite(formData: FormData) {
   });
 
   if (initialYachtId && canAssignYacht(myRole)) {
-    const yacht = await prisma.yacht.findUnique({
-      where: { id: initialYachtId },
+    const yacht = await prisma.yacht.findFirst({
+      where: { id: initialYachtId, organizationId },
       select: { id: true },
     });
     if (yacht) {

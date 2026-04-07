@@ -11,6 +11,7 @@ import {
   isSupabaseStorageConfigured,
   ensureStorageBucket,
 } from "@/lib/supabaseStorage";
+import { requireOrganizationId } from "@/lib/organization";
 
 export async function uploadCommentAttachment(
   commentId: string,
@@ -18,6 +19,9 @@ export async function uploadCommentAttachment(
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized", data: null };
+
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized", data: null };
 
   const file = formData.get("file") as File | null;
   if (!file || !(file instanceof File)) {
@@ -27,8 +31,8 @@ export async function uploadCommentAttachment(
   const role = (session.user as any).role as string;
   const userId = (session.user as any).id as string;
 
-  const comment = await prisma.workOrderComment.findUnique({
-    where: { id: commentId },
+  const comment = await prisma.workOrderComment.findFirst({
+    where: { id: commentId, workOrder: { yacht: { organizationId } } },
     select: {
       id: true,
       workOrderId: true,
@@ -99,6 +103,15 @@ export async function listCommentAttachments(commentId: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized", data: null };
 
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized", data: null };
+
+  const commentOk = await prisma.workOrderComment.findFirst({
+    where: { id: commentId, workOrder: { yacht: { organizationId } } },
+    select: { id: true },
+  });
+  if (!commentOk) return { error: "Not found", data: null };
+
   const items = await prisma.workOrderCommentAttachment.findMany({
     where: { commentId },
     orderBy: { createdAt: "desc" },
@@ -120,8 +133,14 @@ export async function getCommentDownloadUrl(attachmentId: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized", data: null };
 
-  const att = await prisma.workOrderCommentAttachment.findUnique({
-    where: { id: attachmentId },
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized", data: null };
+
+  const att = await prisma.workOrderCommentAttachment.findFirst({
+    where: {
+      id: attachmentId,
+      comment: { workOrder: { yacht: { organizationId } } },
+    },
     select: { id: true, storageKey: true, url: true },
   });
 

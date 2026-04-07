@@ -48,11 +48,29 @@ enum ExpenseLogStatus {
   PAID
 }
 
+/// One row per customer (fleet operator). All users, yachts, and org-scoped data belong to exactly one organization.
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  /// URL-safe identifier (e.g. subdomain or admin reference)
+  slug      String   @unique
+  createdAt DateTime @default(now())
+
+  users           User[]
+  yachts          Yacht[]
+  documentFolders DocumentFolder[]
+}
+
 model User {
   id           String      @id @default(cuid())
   name         String
   email        String      @unique
   passwordHash String
+  /// Null only for software-owner (platform) accounts; all tenant users must have an organization.
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  /// Cross-tenant console at /platform — never grant via app UI, only seed / DB.
+  isPlatformAdmin Boolean @default(false)
   /// Set until the user completes invite; login blocked while non-null.
   inviteToken          String?   @unique
   inviteTokenExpiresAt DateTime?
@@ -78,6 +96,8 @@ model User {
   documentsUploaded      Document[]       @relation("DocumentsCreatedBy")
 
   notifications Notification[]
+
+  @@index([organizationId])
 }
 
 enum NotificationType {
@@ -106,6 +126,8 @@ model Notification {
 
 model Yacht {
   id                 String   @id @default(cuid())
+  organizationId     String
+  organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   name               String
   registrationNumber String
   model              String
@@ -128,6 +150,8 @@ model Yacht {
   // Documents
   documentFolders DocumentFolder[]
   documents       Document[]
+
+  @@index([organizationId])
 }
 
 model ExpenseLog {
@@ -228,6 +252,8 @@ model CalendarEvent {
 
 model DocumentFolder {
   id              String   @id @default(cuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   name            String
   yachtId         String?
   createdByUserId String
@@ -238,9 +264,10 @@ model DocumentFolder {
   createdBy User       @relation("DocumentFoldersCreatedBy", fields: [createdByUserId], references: [id])
   documents Document[]
 
-  @@unique([name, yachtId])
+  @@unique([organizationId, name, yachtId])
   @@index([yachtId])
   @@index([createdByUserId])
+  @@index([organizationId])
 }
 
 model Document {

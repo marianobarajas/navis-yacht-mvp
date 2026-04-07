@@ -8,9 +8,10 @@ import {
   canAssignWorkOrder,
   isManagerOrAbove,
 } from "@/lib/rbac";
-import type { Priority, WorkOrderStatus } from "@prisma/client";
+import type { Priority, Prisma, WorkOrderStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { createNotification } from "@/actions/notifications";
+import { requireOrganizationId } from "@/lib/organization";
 
 /**
  * <input type="date"> manda YYYY-MM-DD.
@@ -38,7 +39,12 @@ export async function listWorkOrders(filters?: {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized", data: null };
 
-  const baseWhere: Record<string, unknown> = {};
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized", data: null };
+
+  const baseWhere: Prisma.WorkOrderWhereInput = {
+    yacht: { organizationId },
+  };
   if (!isManagerOrAbove(session.user.role)) {
     baseWhere.assignedToUserId = session.user.id;
   }
@@ -87,9 +93,21 @@ export async function getWorkOrdersByYacht(yachtId: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized", data: null };
 
-  const baseWhere = { yachtId };
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized", data: null };
+
+  const yacht = await prisma.yacht.findFirst({
+    where: { id: yachtId, organizationId },
+    select: { id: true },
+  });
+  if (!yacht) return { error: "Not found", data: null };
+
+  const baseWhere: Prisma.WorkOrderWhereInput = {
+    yachtId,
+    yacht: { organizationId },
+  };
   if (!isManagerOrAbove(session.user.role)) {
-    (baseWhere as Record<string, unknown>).assignedToUserId = session.user.id;
+    baseWhere.assignedToUserId = session.user.id;
   }
 
   const orders = await prisma.workOrder.findMany({
@@ -116,6 +134,9 @@ export async function createWorkOrder(formData: FormData) {
   if (!session?.user) return { error: "Unauthorized" };
   if (!canCreateWorkOrder(session.user.role)) return { error: "Forbidden" };
 
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized" };
+
   const yachtId = String(formData.get("yachtId") ?? "").trim();
   const title = String(formData.get("title") ?? "").trim();
   const descriptionRaw = String(formData.get("description") ?? "");
@@ -127,6 +148,12 @@ export async function createWorkOrder(formData: FormData) {
 
   if (!yachtId || !title) return { error: "Yacht and title required" };
 
+  const yachtOk = await prisma.yacht.findFirst({
+    where: { id: yachtId, organizationId },
+    select: { id: true },
+  });
+  if (!yachtOk) return { error: "Yacht not found" };
+
   const allowedPriorities: Priority[] = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
   const priority: Priority = allowedPriorities.includes(priorityRaw as Priority)
     ? (priorityRaw as Priority)
@@ -137,6 +164,14 @@ export async function createWorkOrder(formData: FormData) {
 
   const dueDate = dueDateRaw ? parseDateOnly(dueDateRaw) : null;
   if (dueDateRaw && !dueDate) return { error: "Invalid due date" };
+
+  if (assignedToUserIdRaw) {
+    const assignee = await prisma.user.findFirst({
+      where: { id: assignedToUserIdRaw, organizationId },
+      select: { id: true },
+    });
+    if (!assignee) return { error: "Assignee not found in your organization" };
+  }
 
   const created = await prisma.workOrder.create({
     data: {
@@ -175,8 +210,11 @@ export async function updateWorkOrderStatus(workOrderId: string, status: WorkOrd
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized" };
 
-  const order = await prisma.workOrder.findUnique({
-    where: { id: workOrderId },
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized" };
+
+  const order = await prisma.workOrder.findFirst({
+    where: { id: workOrderId, yacht: { organizationId } },
     select: { id: true, title: true, createdByUserId: true, assignedToUserId: true },
   });
   if (!order) return { error: "Not found" };
@@ -218,6 +256,20 @@ export async function assignWorkOrder(workOrderId: string, userId: string | null
   if (!session?.user) return { error: "Unauthorized" };
   if (!canAssignWorkOrder(session.user.role)) return { error: "Forbidden" };
 
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized" };
+
+  const exists = await prisma.workOrder.findFirst({
+    where: { id: workOrderId, yacht: { organizationId } },
+    select: { id: true },
+  });
+  if (!exists) return { error: "Not found" };
+
+  if (userId) {
+    const u = await prisma.user.findFirst({ where: { id: userId, organizationId }, select: { id: true } });
+    if (!u) return { error: "User not found in your organization" };
+  }
+
   await prisma.workOrder.update({
     where: { id: workOrderId },
     data: { assignedToUserId: userId || null },
@@ -250,8 +302,11 @@ export async function deleteWorkOrder(workOrderId: string) {
 
   if (!isManagerOrAbove(session.user.role)) return { error: "Forbidden" };
 
-  const existing = await prisma.workOrder.findUnique({
-    where: { id: workOrderId },
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized" };
+
+  const existing = await prisma.workOrder.findFirst({
+    where: { id: workOrderId, yacht: { organizationId } },
     select: { id: true },
   });
   if (!existing) return { error: "Not found" };
@@ -267,8 +322,11 @@ export async function updateWorkOrderDetails(workOrderId: string, formData: Form
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized" };
 
-  const order = await prisma.workOrder.findUnique({
-    where: { id: workOrderId },
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized" };
+
+  const order = await prisma.workOrder.findFirst({
+    where: { id: workOrderId, yacht: { organizationId } },
     select: { id: true, title: true, createdByUserId: true, assignedToUserId: true },
   });
   if (!order) return { error: "Not found" };

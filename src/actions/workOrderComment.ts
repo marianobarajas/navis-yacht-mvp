@@ -6,10 +6,20 @@ import { prisma } from "@/lib/db";
 import { isManagerOrAbove } from "@/lib/rbac";
 import { revalidatePath } from "next/cache";
 import { createNotification } from "@/actions/notifications";
+import { requireOrganizationId } from "@/lib/organization";
 
 export async function listWorkOrderComments(workOrderId: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized", data: null };
+
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized", data: null };
+
+  const orderOk = await prisma.workOrder.findFirst({
+    where: { id: workOrderId, yacht: { organizationId } },
+    select: { id: true },
+  });
+  if (!orderOk) return { error: "Not found", data: null };
 
   const comments = await prisma.workOrderComment.findMany({
     where: { workOrderId },
@@ -43,12 +53,15 @@ export async function createWorkOrderComment(workOrderId: string, text: string) 
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized" };
 
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized" };
+
   const value = String(text ?? "").trim();
   if (!value) return { error: "Comment cannot be empty" };
   if (value.length > 2000) return { error: "Comment too long (max 2000 chars)" };
 
-  const order = await prisma.workOrder.findUnique({
-    where: { id: workOrderId },
+  const order = await prisma.workOrder.findFirst({
+    where: { id: workOrderId, yacht: { organizationId } },
     select: { id: true, title: true, createdByUserId: true, assignedToUserId: true },
   });
   if (!order) return { error: "Task not found" };
@@ -94,11 +107,14 @@ export async function deleteWorkOrderComment(commentId: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized" };
 
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized" };
+
   const role = (session.user as any).role as string;
   const userId = (session.user as any).id as string;
 
-  const comment = await prisma.workOrderComment.findUnique({
-    where: { id: commentId },
+  const comment = await prisma.workOrderComment.findFirst({
+    where: { id: commentId, workOrder: { yacht: { organizationId } } },
     select: { id: true, authorUserId: true, workOrderId: true },
   });
   if (!comment) return { error: "Not found" };

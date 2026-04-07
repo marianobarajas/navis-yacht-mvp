@@ -5,59 +5,78 @@ import { hash } from "bcryptjs";
 const prisma = new PrismaClient();
 
 async function main() {
+  const org = await prisma.organization.upsert({
+    where: { slug: "demo" },
+    update: {},
+    create: {
+      id: "org_demo_default",
+      name: "Demo fleet",
+      slug: "demo",
+    },
+  });
+
   const adminHash = await hash("admin123", 10);
   const managerHash = await hash("manager123", 10);
   const techHash = await hash("tech123", 10);
 
   const admin = await prisma.user.upsert({
     where: { email: "admin@oceanops.demo" },
-    update: {},
+    update: { organizationId: org.id, isPlatformAdmin: false },
     create: {
+      organizationId: org.id,
       name: "Admin User",
       email: "admin@oceanops.demo",
       passwordHash: adminHash,
       role: "ADMIN",
+      isPlatformAdmin: false,
     },
   });
 
   const manager = await prisma.user.upsert({
     where: { email: "manager@oceanops.demo" },
-    update: {},
+    update: { organizationId: org.id, isPlatformAdmin: false },
     create: {
+      organizationId: org.id,
       name: "Manager User",
       email: "manager@oceanops.demo",
       passwordHash: managerHash,
       role: "MANAGER",
+      isPlatformAdmin: false,
     },
   });
 
   const tech1 = await prisma.user.upsert({
     where: { email: "tech1@oceanops.demo" },
-    update: {},
+    update: { organizationId: org.id, isPlatformAdmin: false },
     create: {
+      organizationId: org.id,
       name: "Tech One",
       email: "tech1@oceanops.demo",
       passwordHash: techHash,
       role: "TECHNICIAN",
+      isPlatformAdmin: false,
     },
   });
 
   const tech2 = await prisma.user.upsert({
     where: { email: "tech2@oceanops.demo" },
-    update: {},
+    update: { organizationId: org.id, isPlatformAdmin: false },
     create: {
+      organizationId: org.id,
       name: "Tech Two",
       email: "tech2@oceanops.demo",
       passwordHash: techHash,
       role: "TECHNICIAN",
+      isPlatformAdmin: false,
     },
   });
 
   const yacht1 = await prisma.yacht.upsert({
     where: { id: "seed-yacht-1" },
-    update: {},
+    update: { organizationId: org.id },
     create: {
       id: "seed-yacht-1",
+      organizationId: org.id,
       name: "Sea Breeze",
       registrationNumber: "REG001",
       model: "Sunseeker 75",
@@ -70,9 +89,10 @@ async function main() {
 
   const yacht2 = await prisma.yacht.upsert({
     where: { id: "seed-yacht-2" },
-    update: {},
+    update: { organizationId: org.id },
     create: {
       id: "seed-yacht-2",
+      organizationId: org.id,
       name: "Ocean Dream",
       registrationNumber: "REG002",
       model: "Princess 62",
@@ -164,7 +184,29 @@ async function main() {
     },
   });
 
-  console.log("Seed complete: admin, manager, 2 techs, 2 yachts, assignments, work orders, log entries.");
+  const platformHash = await hash("Navis", 10);
+  await prisma.user.upsert({
+    where: { email: "admin@admin" },
+    update: {
+      name: "Platform owner",
+      passwordHash: platformHash,
+      role: "ADMIN",
+      isPlatformAdmin: true,
+      organizationId: null,
+    },
+    create: {
+      email: "admin@admin",
+      name: "Platform owner",
+      passwordHash: platformHash,
+      role: "ADMIN",
+      isPlatformAdmin: true,
+      organizationId: null,
+    },
+  });
+
+  console.log(
+    "Seed complete: demo org, platform owner (admin@admin), admin, manager, 2 techs, 2 yachts, assignments, work orders, log entries."
+  );
 }
 
 main()

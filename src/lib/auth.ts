@@ -30,6 +30,8 @@ export const authOptions: NextAuthOptions = {
             isActive: true,
             inviteToken: true,
             profileImage: true,
+            organizationId: true,
+            isPlatformAdmin: true,
           },
         });
         if (!user || !user.isActive) return null;
@@ -44,6 +46,8 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           role: user.role,
           profileImage: user.profileImage,
+          organizationId: user.organizationId ?? undefined,
+          isPlatformAdmin: user.isPlatformAdmin,
         };
       },
     }),
@@ -54,6 +58,8 @@ export const authOptions: NextAuthOptions = {
       token.id = user.id;
       token.role = user.role;
       token.profileImage = user.profileImage ?? null;
+      token.organizationId = (user as { organizationId?: string }).organizationId;
+      token.isPlatformAdmin = Boolean((user as { isPlatformAdmin?: boolean }).isPlatformAdmin);
     }
     if (trigger === "update" && session && typeof session === "object" && "profileImage" in session) {
       token.profileImage = (session as { profileImage?: string | null }).profileImage ?? null;
@@ -66,6 +72,16 @@ export const authOptions: NextAuthOptions = {
       });
       token.profileImage = row?.profileImage ?? null;
     }
+    if (token.id && (token.organizationId === undefined || token.isPlatformAdmin === undefined)) {
+      const row = await prisma.user.findUnique({
+        where: { id: token.id as string },
+        select: { organizationId: true, isPlatformAdmin: true },
+      });
+      if (row?.organizationId) token.organizationId = row.organizationId;
+      if (token.isPlatformAdmin === undefined) {
+        token.isPlatformAdmin = Boolean(row?.isPlatformAdmin);
+      }
+    }
     return token;
   },
   async session({ session, token }) {
@@ -73,6 +89,12 @@ export const authOptions: NextAuthOptions = {
       session.user.id = token.id as string;
       session.user.role = token.role as typeof session.user.role;
       session.user.profileImage = token.profileImage ?? null;
+      if (token.organizationId) {
+        session.user.organizationId = token.organizationId as string;
+      } else {
+        delete session.user.organizationId;
+      }
+      session.user.isPlatformAdmin = Boolean(token.isPlatformAdmin);
     }
     return session;
   },

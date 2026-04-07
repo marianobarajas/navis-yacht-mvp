@@ -4,8 +4,10 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { calendarEventOrgWhere } from "@/lib/calendarScopes";
 import { canCreateCalendarEvent, canCreateWorkOrder } from "@/lib/rbac";
 import { revalidatePath } from "next/cache";
+import { requireOrganizationId } from "@/lib/organization";
 
 /**
  * Parses an <input type="date"> value (YYYY-MM-DD) into a stable Date.
@@ -22,7 +24,11 @@ export async function listEvents() {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized", data: null };
 
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized", data: null };
+
   const events = await prisma.calendarEvent.findMany({
+    where: calendarEventOrgWhere(organizationId),
     orderBy: { startAt: "asc" },
     select: {
       id: true,
@@ -44,6 +50,9 @@ export async function listEvents() {
 export async function createEvent(formData: FormData) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized" };
+
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized" };
 
   const role = (session.user as any).role;
   if (!canCreateCalendarEvent(role)) return { error: "Forbidden" };
@@ -70,6 +79,21 @@ export async function createEvent(formData: FormData) {
   const priority = allowedPriorities.includes(priorityRaw as (typeof allowedPriorities)[number])
     ? (priorityRaw as (typeof allowedPriorities)[number])
     : "MEDIUM";
+
+  if (yachtIdRaw) {
+    const y = await prisma.yacht.findFirst({
+      where: { id: yachtIdRaw, organizationId },
+      select: { id: true },
+    });
+    if (!y) return { error: "Yacht not found in your organization" };
+  }
+  if (assignedUserIdRaw) {
+    const u = await prisma.user.findFirst({
+      where: { id: assignedUserIdRaw, organizationId },
+      select: { id: true },
+    });
+    if (!u) return { error: "User not found in your organization" };
+  }
 
   // If "Create a Task" is checked, require yacht and create WorkOrder
   if (createTask) {
@@ -115,8 +139,17 @@ export async function updateEvent(eventId: string, formData: FormData) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized" };
 
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized" };
+
   const role = (session.user as any).role;
   if (!canCreateCalendarEvent(role)) return { error: "Forbidden" };
+
+  const existing = await prisma.calendarEvent.findFirst({
+    where: { id: eventId, ...calendarEventOrgWhere(organizationId) },
+    select: { id: true },
+  });
+  if (!existing) return { error: "Not found" };
 
   const title = String(formData.get("title") ?? "").trim();
   const yachtIdRaw = String(formData.get("yachtId") ?? "").trim();
@@ -132,6 +165,21 @@ export async function updateEvent(eventId: string, formData: FormData) {
   const endAt = endAtRaw ? parseDateOnly(endAtRaw) : null;
   if (endAtRaw && !endAt) return { error: "Invalid end date" };
   if (endAt && endAt < startAt) return { error: "End must be after Start" };
+
+  if (yachtIdRaw) {
+    const y = await prisma.yacht.findFirst({
+      where: { id: yachtIdRaw, organizationId },
+      select: { id: true },
+    });
+    if (!y) return { error: "Yacht not found in your organization" };
+  }
+  if (assignedUserIdRaw) {
+    const u = await prisma.user.findFirst({
+      where: { id: assignedUserIdRaw, organizationId },
+      select: { id: true },
+    });
+    if (!u) return { error: "User not found in your organization" };
+  }
 
   await prisma.calendarEvent.update({
     where: { id: eventId },
@@ -153,8 +201,17 @@ export async function deleteEvent(eventId: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized" };
 
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized" };
+
   const role = (session.user as any).role;
   if (!canCreateCalendarEvent(role)) return { error: "Forbidden" };
+
+  const existing = await prisma.calendarEvent.findFirst({
+    where: { id: eventId, ...calendarEventOrgWhere(organizationId) },
+    select: { id: true },
+  });
+  if (!existing) return { error: "Not found" };
 
   await prisma.calendarEvent.delete({ where: { id: eventId } });
   revalidatePath("/calendar");

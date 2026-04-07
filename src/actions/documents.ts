@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { isManagerOrAbove } from "@/lib/rbac";
+import { requireOrganizationId } from "@/lib/organization";
 
 function isValidHttpUrl(value: string) {
   try {
@@ -20,8 +21,12 @@ export async function listFolders(opts?: { yachtId?: string | null }) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized", data: null };
 
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized", data: null };
+
   const folders = await prisma.documentFolder.findMany({
     where: {
+      organizationId,
       yachtId: opts?.yachtId === undefined ? undefined : opts?.yachtId,
     },
     orderBy: [{ name: "asc" }],
@@ -40,11 +45,22 @@ export async function createFolder(formData: FormData) {
 
   if (!isManagerOrAbove((session.user as any).role)) return { error: "Forbidden" };
 
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized" };
+
   const name = String(formData.get("name") ?? "").trim();
   const yachtIdRaw = String(formData.get("yachtId") ?? "").trim();
   const yachtId = yachtIdRaw ? yachtIdRaw : null;
 
   if (!name) return { error: "Folder name is required" };
+
+  if (yachtId) {
+    const y = await prisma.yacht.findFirst({
+      where: { id: yachtId, organizationId },
+      select: { id: true },
+    });
+    if (!y) return { error: "Yacht not found in your organization" };
+  }
 
   // ✅ Robust user id resolution (session id OR lookup by email)
   const sessionUserId = (session.user as any).id as string | undefined;
@@ -71,6 +87,7 @@ export async function createFolder(formData: FormData) {
   try {
     await prisma.documentFolder.create({
       data: {
+        organizationId,
         name,
         yachtId,
         createdByUserId: userId,
@@ -96,8 +113,17 @@ export async function renameFolder(folderId: string, formData: FormData) {
   if (!session?.user) return { error: "Unauthorized" };
   if (!isManagerOrAbove((session.user as any).role)) return { error: "Forbidden" };
 
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized" };
+
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return { error: "Name required" };
+
+  const folder = await prisma.documentFolder.findFirst({
+    where: { id: folderId, organizationId },
+    select: { id: true },
+  });
+  if (!folder) return { error: "Not found" };
 
   await prisma.documentFolder.update({
     where: { id: folderId },
@@ -114,6 +140,15 @@ export async function deleteFolder(folderId: string) {
   if (!session?.user) return { error: "Unauthorized" };
   if (!isManagerOrAbove((session.user as any).role)) return { error: "Forbidden" };
 
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized" };
+
+  const folder = await prisma.documentFolder.findFirst({
+    where: { id: folderId, organizationId },
+    select: { id: true },
+  });
+  if (!folder) return { error: "Not found" };
+
   await prisma.documentFolder.delete({ where: { id: folderId } });
 
   revalidatePath("/documents");
@@ -124,6 +159,15 @@ export async function deleteFolder(folderId: string) {
 export async function listDocuments(folderId: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized", data: null };
+
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized", data: null };
+
+  const folder = await prisma.documentFolder.findFirst({
+    where: { id: folderId, organizationId },
+    select: { id: true },
+  });
+  if (!folder) return { error: "Not found", data: null };
 
   const docs = await prisma.document.findMany({
     where: { folderId },
@@ -140,6 +184,9 @@ export async function createDocument(formData: FormData) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized" };
 
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized" };
+
   // Aquí puedes permitir TECH también (porque solo agrega links)
   const folderId = String(formData.get("folderId") ?? "").trim();
   const title = String(formData.get("title") ?? "").trim();
@@ -148,6 +195,12 @@ export async function createDocument(formData: FormData) {
 
   if (!folderId || !title || !externalUrl) return { error: "Missing required fields" };
   if (!isValidHttpUrl(externalUrl)) return { error: "URL must start with http(s)://" };
+
+  const folder = await prisma.documentFolder.findFirst({
+    where: { id: folderId, organizationId },
+    select: { id: true },
+  });
+  if (!folder) return { error: "Folder not found" };
 
   await prisma.document.create({
     data: {
@@ -168,12 +221,21 @@ export async function updateDocument(docId: string, formData: FormData) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized" };
 
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized" };
+
   const title = String(formData.get("title") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
   const externalUrl = String(formData.get("externalUrl") ?? "").trim();
 
   if (!title || !externalUrl) return { error: "Title and URL required" };
   if (!isValidHttpUrl(externalUrl)) return { error: "URL must start with http(s)://" };
+
+  const existing = await prisma.document.findFirst({
+    where: { id: docId, folder: { organizationId } },
+    select: { id: true },
+  });
+  if (!existing) return { error: "Not found" };
 
   await prisma.document.update({
     where: { id: docId },
@@ -192,8 +254,14 @@ export async function deleteDocument(docId: string, folderId: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized" };
 
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized" };
+
   // Simple: cualquiera puede borrar lo que subió; managers pueden borrar todo
-  const doc = await prisma.document.findUnique({ where: { id: docId }, select: { id: true, createdByUserId: true } });
+  const doc = await prisma.document.findFirst({
+    where: { id: docId, folderId, folder: { organizationId } },
+    select: { id: true, createdByUserId: true },
+  });
   if (!doc) return { error: "Not found" };
 
   const role = (session.user as any).role;

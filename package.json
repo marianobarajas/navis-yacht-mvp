@@ -4,10 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3000",
-    "build": "next build",
+    "postinstall": "prisma generate",
+    "build": "prisma migrate deploy && next build",
     "start": "next start -p 3000",
     "lint": "next lint",
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts",
+    "provision-org": "tsx scripts/provision-org.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

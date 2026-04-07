@@ -5,6 +5,9 @@ declare module "next-auth" {
     user: {
       id: string;
       role: "ADMIN" | "MANAGER" | "TECHNICIAN";
+      /** Tenant scope; omitted for platform-only accounts. */
+      organizationId?: string;
+      isPlatformAdmin?: boolean;
       profileImage?: string | null;
     } & DefaultSession["user"];
   }
@@ -12,6 +15,8 @@ declare module "next-auth" {
   interface User {
     id: string;
     role: "ADMIN" | "MANAGER" | "TECHNICIAN";
+    organizationId?: string | null;
+    isPlatformAdmin?: boolean;
     profileImage?: string | null;
   }
 }
@@ -20,6 +25,8 @@ declare module "next-auth/jwt" {
   interface JWT {
     id?: string;
     role?: "ADMIN" | "MANAGER" | "TECHNICIAN";
+    organizationId?: string;
+    isPlatformAdmin?: boolean;
     profileImage?: string | null;
   }
 }

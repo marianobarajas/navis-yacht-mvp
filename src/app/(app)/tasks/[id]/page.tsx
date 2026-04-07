@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { isManagerOrAbove } from "@/lib/rbac";
+import { requireOrganizationId } from "@/lib/organization";
 import { ChevronLeftIcon, CalendarIcon } from "@/components/ui/Icons";
 
 import { TaskAssigneeSection } from "./TaskAssigneeSection";
@@ -19,12 +20,15 @@ export default async function TaskDetailPage(props: {
   const session = await getServerSession(authOptions);
   if (!session?.user) return notFound();
 
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return notFound();
+
   const params = await props.params;
   const id = params?.id;
   if (!id) return notFound();
 
-const order = await prisma.workOrder.findUnique({
-  where: { id },
+const order = await prisma.workOrder.findFirst({
+  where: { id, yacht: { organizationId } },
   include: {
     yacht: { select: { id: true, name: true } },
     createdBy: { select: { id: true, name: true } },
@@ -75,7 +79,7 @@ const order = await prisma.workOrder.findUnique({
 
   const crewUsers = canManage
     ? await prisma.user.findMany({
-        where: { isActive: true },
+        where: { isActive: true, organizationId },
         select: { id: true, name: true, profileImage: true },
         orderBy: { name: "asc" },
       })

@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { isManagerOrAbove } from "@/lib/rbac";
 import { listFolders } from "@/actions/documents";
 import { prisma } from "@/lib/db";
+import { requireOrganizationId } from "@/lib/organization";
 import FolderCreatePanel from "./FolderCreatePanel";
 import { FolderDeleteButton } from "./FolderDeleteButton";
 import { FolderEditButton } from "./FolderEditButton";
@@ -13,12 +14,16 @@ export default async function DocumentsPage() {
   const session = await getServerSession(authOptions);
   if (!session?.user) throw new Error("Unauthorized");
 
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) throw new Error("Unauthorized");
+
   const role = (session.user as any).role;
   const canManageFolders = isManagerOrAbove(role);
 
   const [foldersRes, yachts] = await Promise.all([
     listFolders(),
     prisma.yacht.findMany({
+      where: { organizationId },
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),

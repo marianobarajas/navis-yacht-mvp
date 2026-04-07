@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { isManagerOrAbove, canCreateWorkOrder } from "@/lib/rbac";
 import { revalidatePath } from "next/cache";
 import type { ExpenseLogStatus } from "@prisma/client";
+import { requireOrganizationId } from "@/lib/organization";
 
 function parseDateOnly(value: string): Date | null {
   const v = String(value ?? "").trim();
@@ -14,7 +15,17 @@ function parseDateOnly(value: string): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
-async function canAccessYacht(userId: string, role: string, yachtId: string): Promise<boolean> {
+async function canAccessYacht(
+  organizationId: string,
+  userId: string,
+  role: string,
+  yachtId: string
+): Promise<boolean> {
+  const yacht = await prisma.yacht.findFirst({
+    where: { id: yachtId, organizationId },
+    select: { id: true },
+  });
+  if (!yacht) return false;
   if (isManagerOrAbove(role)) return true;
   const assigned = await prisma.assignment.findFirst({
     where: { yachtId, userId },
@@ -26,10 +37,13 @@ export async function listExpenseLogsByYacht(yachtId: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized", data: null };
 
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized", data: null };
+
   const userId = (session.user as any).id as string;
   const role = (session.user as any).role as string;
 
-  if (!(await canAccessYacht(userId, role, yachtId))) {
+  if (!(await canAccessYacht(organizationId, userId, role, yachtId))) {
     return { error: "Forbidden", data: null };
   }
 
@@ -45,10 +59,13 @@ export async function createExpenseLog(yachtId: string, formData: FormData) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized" };
 
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized" };
+
   const userId = (session.user as any).id as string;
   const role = (session.user as any).role as string;
 
-  if (!(await canAccessYacht(userId, role, yachtId))) {
+  if (!(await canAccessYacht(organizationId, userId, role, yachtId))) {
     return { error: "Forbidden" };
   }
 
@@ -82,6 +99,13 @@ export async function createExpenseLog(yachtId: string, formData: FormData) {
   });
 
   if (createTask) {
+    if (assignedToUserIdRaw) {
+      const assignee = await prisma.user.findFirst({
+        where: { id: assignedToUserIdRaw, organizationId },
+        select: { id: true },
+      });
+      if (!assignee) return { error: "Assignee not found in your organization" };
+    }
     await prisma.workOrder.create({
       data: {
         yachtId,
@@ -106,16 +130,19 @@ export async function updateExpenseLog(id: string, formData: FormData) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized" };
 
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized" };
+
   const userId = (session.user as any).id as string;
   const role = (session.user as any).role as string;
 
-  const existing = await prisma.expenseLog.findUnique({
-    where: { id },
+  const existing = await prisma.expenseLog.findFirst({
+    where: { id, yacht: { organizationId } },
     select: { yachtId: true },
   });
   if (!existing) return { error: "Not found" };
 
-  if (!(await canAccessYacht(userId, role, existing.yachtId))) {
+  if (!(await canAccessYacht(organizationId, userId, role, existing.yachtId))) {
     return { error: "Forbidden" };
   }
 
@@ -150,6 +177,13 @@ export async function updateExpenseLog(id: string, formData: FormData) {
   });
 
   if (createTask) {
+    if (assignedToUserIdRaw) {
+      const assignee = await prisma.user.findFirst({
+        where: { id: assignedToUserIdRaw, organizationId },
+        select: { id: true },
+      });
+      if (!assignee) return { error: "Assignee not found in your organization" };
+    }
     await prisma.workOrder.create({
       data: {
         yachtId: existing.yachtId,
@@ -174,16 +208,19 @@ export async function updateExpenseLogStatus(id: string, status: ExpenseLogStatu
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized" };
 
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized" };
+
   const userId = (session.user as any).id as string;
   const role = (session.user as any).role as string;
 
-  const existing = await prisma.expenseLog.findUnique({
-    where: { id },
+  const existing = await prisma.expenseLog.findFirst({
+    where: { id, yacht: { organizationId } },
     select: { yachtId: true },
   });
   if (!existing) return { error: "Not found" };
 
-  if (!(await canAccessYacht(userId, role, existing.yachtId))) {
+  if (!(await canAccessYacht(organizationId, userId, role, existing.yachtId))) {
     return { error: "Forbidden" };
   }
 
@@ -203,16 +240,19 @@ export async function deleteExpenseLog(id: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized" };
 
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) return { error: "Unauthorized" };
+
   const userId = (session.user as any).id as string;
   const role = (session.user as any).role as string;
 
-  const existing = await prisma.expenseLog.findUnique({
-    where: { id },
+  const existing = await prisma.expenseLog.findFirst({
+    where: { id, yacht: { organizationId } },
     select: { yachtId: true },
   });
   if (!existing) return { error: "Not found" };
 
-  if (!(await canAccessYacht(userId, role, existing.yachtId))) {
+  if (!(await canAccessYacht(organizationId, userId, role, existing.yachtId))) {
     return { error: "Forbidden" };
   }
 

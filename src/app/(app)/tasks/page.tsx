@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { listWorkOrders } from "@/actions/workOrders";
 import { listYachts } from "@/actions/yachts";
 import { canCreateWorkOrder } from "@/lib/rbac";
+import { requireOrganizationId } from "@/lib/organization";
 
 import { TasksFilters } from "./TasksFilters";
 import WorkOrderCreatePanel from "./WorkOrderCreatePanel";
@@ -57,6 +58,16 @@ export default async function TasksPage({
     );
   }
 
+  const organizationId = requireOrganizationId(session);
+  if (!organizationId) {
+    return (
+      <div>
+        <h1 className="text-3xl font-semibold tracking-tight text-[var(--apple-text-primary)]">Tasks</h1>
+        <p className="mt-2 text-base text-red-600">Unauthorized</p>
+      </div>
+    );
+  }
+
   const params = await searchParams;
 
   const role = (session.user as any).role;
@@ -87,7 +98,7 @@ export default async function TasksPage({
     listWorkOrders(filters),
     listYachts(),
     prisma.user.findMany({
-      where: { isActive: true },
+      where: { isActive: true, organizationId },
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),
