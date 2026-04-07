@@ -1,13 +1,22 @@
 import { getServerSession } from "next-auth";
+import type { Role } from "@prisma/client";
 import { authOptions } from "@/lib/auth";
 import { listUsers } from "@/actions/users";
-import UserCreatePanel from "./UserCreatePanel";
+import { listYachts } from "@/actions/yachts";
+import { CrewAddMemberCard } from "../../crew/CrewAddMemberCard";
 import { AdminUsersTable } from "./AdminUsersTable";
 
 export default async function AdminUsersPage() {
   const session = await getServerSession(authOptions);
-  const actorRole = (session?.user as any)?.role ?? "";
+  const actorRole = ((session?.user as { role?: Role })?.role ?? "") as string;
+  const actorUserId = session?.user?.id ?? "";
   const res = await listUsers();
+
+  const yachtsRes = !res.error ? await listYachts() : null;
+  const yachts =
+    yachtsRes && !yachtsRes.error && yachtsRes.data
+      ? yachtsRes.data.map((y) => ({ id: y.id, name: y.name }))
+      : [];
 
   return (
     <div>
@@ -17,8 +26,8 @@ export default async function AdminUsersPage() {
       {res.error ? <p className="mt-3 text-base text-red-600">{res.error}</p> : null}
 
       {!res.error ? (
-        <div className="mt-8">
-          <UserCreatePanel allowAdminRole={actorRole === "ADMIN"} />
+        <div className="mt-6">
+          <CrewAddMemberCard yachts={yachts} allowAdminRole={actorRole === "ADMIN"} />
         </div>
       ) : null}
 
@@ -28,7 +37,7 @@ export default async function AdminUsersPage() {
         </h2>
 
         {res.data && res.data.length > 0 ? (
-          <AdminUsersTable users={res.data} actorRole={actorRole} />
+          <AdminUsersTable users={res.data} actorRole={actorRole} actorUserId={actorUserId} />
         ) : (
           <p className="p-8 text-center text-base text-[var(--apple-text-secondary)]">No users.</p>
         )}

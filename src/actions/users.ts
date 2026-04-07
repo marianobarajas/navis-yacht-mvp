@@ -279,6 +279,72 @@ export async function deactivateUser(userId: string) {
   return { error: null };
 }
 
+/**
+ * Hard-delete user. Reassigns WorkOrder/Document rows they created so FK constraints allow delete.
+ * Cascades remove notifications, assignments, comments, etc. per schema.
+ */
+export async function deleteUserPermanently(userId: string) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return { error: "Unauthorized" };
+
+  const myRole = session.user.role as Role;
+  if (!canManageUsers(myRole)) return { error: "Forbidden" };
+
+  const actorId = session.user.id;
+  if (userId === actorId) return { error: "You cannot delete your own account" };
+
+  const target = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, role: true },
+  });
+  if (!target) return { error: "User not found" };
+
+  if (target.role === "ADMIN" && myRole !== "ADMIN") {
+    return { error: "Only ADMIN can delete ADMIN users" };
+  }
+
+  if (target.role === "ADMIN") {
+    const otherAdmins = await prisma.user.count({
+      where: { role: "ADMIN", id: { not: userId } },
+    });
+    if (otherAdmins === 0) return { error: "Cannot delete the last administrator" };
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.workOrder.updateMany({
+        where: { createdByUserId: userId },
+        data: { createdByUserId: actorId },
+      });
+      await tx.workOrder.updateMany({
+        where: { assignedToUserId: userId },
+        data: { assignedToUserId: null },
+      });
+      await tx.documentFolder.updateMany({
+        where: { createdByUserId: userId },
+        data: { createdByUserId: actorId },
+      });
+      await tx.document.updateMany({
+        where: { createdByUserId: userId },
+        data: { createdByUserId: actorId },
+      });
+      await tx.user.delete({ where: { id: userId } });
+    });
+  } catch (e) {
+    console.error("[deleteUserPermanently]", e);
+    return {
+      error:
+        "Could not delete this user. They may still be linked to data that cannot be reassigned automatically.",
+    };
+  }
+
+  revalidatePath("/admin/users");
+  revalidatePath("/crew");
+  revalidatePath("/yachts");
+  revalidatePath("/tasks");
+  return { error: null };
+}
+
 export async function reactivateUser(userId: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized" };

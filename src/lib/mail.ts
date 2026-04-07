@@ -5,10 +5,13 @@
 const NAVY = "#1e4a52";
 const SAND = "#e8dcc8";
 
+/** Public site URL for links in emails (invite, etc.). */
 function appBaseUrl() {
+  const vercel = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "";
   const u =
-    process.env.NEXT_PUBLIC_APP_URL ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "") ||
+    process.env.NEXT_PUBLIC_APP_URL?.trim() ||
+    process.env.NEXTAUTH_URL?.trim() ||
+    vercel ||
     "http://localhost:3000";
   return u.replace(/\/$/, "");
 }

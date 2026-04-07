@@ -6,7 +6,11 @@ import { useRouter } from "next/navigation";
 import { getUserWithAssignments, resetUserPassword, updateUserPermissionOverrides } from "@/actions/users";
 import { listYachts, assignYachtToUser, unassignYachtFromUser } from "@/actions/yachts";
 import { UserEditForm } from "./UserEditForm";
-import { DeleteUserButton } from "./DeleteUserButton";
+import {
+  DeactivateUserButton,
+  PermanentlyDeleteUserButton,
+  ReactivateUserButton,
+} from "./UserLifecycleButtons";
 import { XIcon, PlusIcon } from "@/components/ui/Icons";
 import { CustomSelect } from "@/components/ui/CustomSelect";
 import Link from "next/link";
@@ -40,10 +44,12 @@ function getDefaultForRole(role: string): Record<string, boolean> {
 export function UserDetailModal({
   userId,
   actorRole,
+  actorUserId,
   onClose,
 }: {
   userId: string;
   actorRole: string;
+  actorUserId: string;
   onClose: () => void;
 }) {
   const router = useRouter();
@@ -110,7 +116,8 @@ export function UserDetailModal({
 
   const canEdit = data && (data.role !== "ADMIN" || actorRole === "ADMIN");
   const canEditPermissions = data && (actorRole === "ADMIN" || actorRole === "MANAGER") && (data.role !== "ADMIN" || actorRole === "ADMIN");
-  const canDelete = data?.isActive && (data.role !== "ADMIN" || actorRole === "ADMIN");
+  const canModifyLifecycle =
+    data && (data.role !== "ADMIN" || actorRole === "ADMIN") && data.id !== actorUserId;
   const canAssign = data && canAssignYacht(actorRole);
   const canResetPwd = data && (actorRole === "ADMIN" || actorRole === "MANAGER") && (data.role !== "ADMIN" || actorRole === "ADMIN");
 
@@ -414,9 +421,29 @@ export function UserDetailModal({
                 </section>
               </div>
 
-              {canDelete && (
-                <div className="col-span-full flex shrink-0 justify-end border-t border-[var(--apple-border)] pt-4">
-                  <DeleteUserButton userId={data.id} userName={data.name} isActive={data.isActive} canDelete={true} onDeleted={onClose} />
+              {canModifyLifecycle && (
+                <div className="col-span-full flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-[var(--apple-border)] pt-4">
+                  {data.isActive ? (
+                    <DeactivateUserButton
+                      userId={data.id}
+                      userName={data.name}
+                      actorUserId={actorUserId}
+                      onDone={onClose}
+                    />
+                  ) : (
+                    <ReactivateUserButton
+                      userId={data.id}
+                      userName={data.name}
+                      actorUserId={actorUserId}
+                      onDone={onClose}
+                    />
+                  )}
+                  <PermanentlyDeleteUserButton
+                    userId={data.id}
+                    userName={data.name}
+                    actorUserId={actorUserId}
+                    onDone={onClose}
+                  />
                 </div>
               )}
             </div>

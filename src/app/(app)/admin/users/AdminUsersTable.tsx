@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 import { UserDetailModal } from "./UserDetailModal";
-import { DeleteUserButton } from "./DeleteUserButton";
+import {
+  DeactivateUserButton,
+  PermanentlyDeleteUserButton,
+  ReactivateUserButton,
+} from "./UserLifecycleButtons";
 import { roleBorderLeftClass } from "@/lib/uiAccent";
 
 type User = {
@@ -17,9 +21,11 @@ type User = {
 export function AdminUsersTable({
   users,
   actorRole,
+  actorUserId,
 }: {
   users: User[];
   actorRole: string;
+  actorUserId: string;
 }) {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
@@ -37,12 +43,16 @@ export function AdminUsersTable({
         </thead>
         <tbody>
           {users.map((u) => {
-            const canDelete = u.isActive && (u.role !== "ADMIN" || actorRole === "ADMIN");
+            const canModifyTarget = u.role !== "ADMIN" || actorRole === "ADMIN";
+            const canDeactivate = u.isActive && canModifyTarget && u.id !== actorUserId;
+            const canReactivate = !u.isActive && canModifyTarget && u.id !== actorUserId;
+            const canPermaDelete = canModifyTarget && u.id !== actorUserId;
+
             return (
               <tr
                 key={u.id}
                 onClick={() => setSelectedUserId(u.id)}
-                className="border-b border-[var(--apple-border)] cursor-pointer transition-colors hover:bg-[var(--apple-bg-subtle)]"
+                className="cursor-pointer border-b border-[var(--apple-border)] transition-colors hover:bg-[var(--apple-bg-subtle)]"
               >
                 <td
                   className={`border-l-4 px-5 py-3.5 font-medium text-[var(--apple-text-primary)] ${roleBorderLeftClass(u.role)}`}
@@ -55,12 +65,36 @@ export function AdminUsersTable({
                   {u.isActive ? "Yes" : "No"}
                 </td>
                 <td className="px-5 py-3.5" onClick={(e) => e.stopPropagation()}>
-                  <DeleteUserButton
-                    userId={u.id}
-                    userName={u.name}
-                    isActive={u.isActive}
-                    canDelete={canDelete}
-                  />
+                  {!canModifyTarget ? (
+                    <span className="text-xs text-[var(--apple-text-tertiary)]">—</span>
+                  ) : (
+                    <div className="flex flex-wrap items-center gap-1">
+                      {canDeactivate ? (
+                        <DeactivateUserButton
+                          userId={u.id}
+                          userName={u.name}
+                          actorUserId={actorUserId}
+                          compact
+                        />
+                      ) : null}
+                      {canReactivate ? (
+                        <ReactivateUserButton
+                          userId={u.id}
+                          userName={u.name}
+                          actorUserId={actorUserId}
+                          compact
+                        />
+                      ) : null}
+                      {canPermaDelete ? (
+                        <PermanentlyDeleteUserButton
+                          userId={u.id}
+                          userName={u.name}
+                          actorUserId={actorUserId}
+                          compact
+                        />
+                      ) : null}
+                    </div>
+                  )}
                 </td>
               </tr>
             );
@@ -72,6 +106,7 @@ export function AdminUsersTable({
         <UserDetailModal
           userId={selectedUserId}
           actorRole={actorRole}
+          actorUserId={actorUserId}
           onClose={() => setSelectedUserId(null)}
         />
       )}

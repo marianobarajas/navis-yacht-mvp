@@ -50,9 +50,9 @@ export function CrewAddMemberCard({
       if (fn === sendUserInvite && res?.devInviteUrl) {
         setOk(
           [
-            "Invite created, but no email was sent — RESEND_API_KEY is not set in your .env file.",
-            "To send real emails: add RESEND_API_KEY from resend.com/api-keys, restart the dev server, and send again.",
-            `For now, copy this link and send it to the person yourself (e.g. Slack or text): ${res.devInviteUrl}`,
+            "Invite created, but no email was sent — RESEND_API_KEY is not set.",
+            "Add it to .env (local) or Vercel → Environment Variables (production), from resend.com/api-keys, then send again.",
+            `For now, copy this link: ${res.devInviteUrl}`,
           ].join(" ")
         );
       } else {
@@ -180,7 +180,7 @@ export function CrewAddMemberCard({
           </div>
           <p className="text-xs text-[var(--apple-text-tertiary)]">
             <strong>Send invite</strong> creates the user and emails them a link to set a password. That requires{" "}
-            <code className="rounded bg-black/5 px-1">RESEND_API_KEY</code> in <code className="rounded bg-black/5 px-1">.env</code> (from{" "}
+            <code className="rounded bg-black/5 px-1">RESEND_API_KEY</code> in <code className="rounded bg-black/5 px-1">.env</code> or Vercel env (from{" "}
             <span className="whitespace-nowrap">resend.com</span>). Without it, you only get the link on screen to copy manually.
             <strong> Create user</strong> needs a temporary password.
           </p>

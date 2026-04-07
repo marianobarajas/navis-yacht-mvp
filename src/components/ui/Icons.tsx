@@ -131,7 +131,17 @@ export function ClipboardIcon({ className = iconClass }: { className?: string })
 export function UserMinusIcon({ className = iconClass }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14H8a2 2 0 00-2 2v2h8v-2a2 2 0 00-2-2zm-4 4h8" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7.5 21v-2.25A4.5 4.5 0 0112 14.25v0" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.5 12h-6" />
+    </svg>
+  );
+}
+
+export function ArrowPathIcon({ className = iconClass }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
     </svg>
   );
 }
