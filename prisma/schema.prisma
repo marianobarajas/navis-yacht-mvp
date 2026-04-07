@@ -1,0 +1,319 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  TECHNICIAN
+}
+
+enum ShiftStatus {
+  ON_SHIFT
+  OFF_DUTY
+  UNAVAILABLE
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum WorkOrderStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_PARTS
+  DONE
+  CLOSED
+}
+
+enum LogEntryType {
+  STATUS_UPDATE
+  NOTE
+  CHECKLIST
+  PHOTO
+}
+
+enum ExpenseLogStatus {
+  PENDING_APPROVAL
+  APPROVED
+  PAID
+}
+
+model User {
+  id           String      @id @default(cuid())
+  name         String
+  email        String      @unique
+  passwordHash String
+  /// Set until the user completes invite; login blocked while non-null.
+  inviteToken          String?   @unique
+  inviteTokenExpiresAt DateTime?
+  role         Role
+  isActive     Boolean     @default(true)
+  profileImage String?
+  shiftStatus         ShiftStatus @default(OFF_DUTY)
+  permissionOverrides    Json?    // { [permissionKey: string]: boolean } to override role defaults
+  notificationPreferences Json?    // { taskAssigned?: boolean, dueToday?: boolean, taskUpdated?: boolean }; default true when missing
+  createdAt              DateTime @default(now())
+
+  assignmentsAsUser      Assignment[]       @relation("UserAssignments")
+  workOrdersCreated      WorkOrder[]        @relation("WorkOrderCreatedBy")
+  workOrdersAssigned     WorkOrder[]        @relation("WorkOrderAssignedTo")
+  logEntries             LogEntry[]
+  calendarEventsCreated  CalendarEvent[]    @relation("CalendarEventCreatedBy")
+  calendarEventsAssigned CalendarEvent[]    @relation("CalendarEventAssignedTo")
+  workOrderComments      WorkOrderComment[]
+  workOrderAttachments   WorkOrderAttachment[]
+  workOrderCommentAttachments WorkOrderCommentAttachment[]
+
+  documentFoldersCreated DocumentFolder[] @relation("DocumentFoldersCreatedBy")
+  documentsUploaded      Document[]       @relation("DocumentsCreatedBy")
+
+  notifications Notification[]
+}
+
+enum NotificationType {
+  TASK_ASSIGNED
+  TASK_DUE_TODAY
+  TASK_UPDATED
+}
+
+model Notification {
+  id           String           @id @default(cuid())
+  userId       String
+  type         NotificationType
+  title        String
+  body         String
+  link         String?
+  workOrderId  String?
+  read         Boolean          @default(false)
+  createdAt    DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([userId, read])
+}
+
+model Yacht {
+  id                 String   @id @default(cuid())
+  name               String
+  registrationNumber String
+  model              String
+  year               Int
+  ownerName          String
+  marina             String
+  /// Fleet status for cards & filters: ACTIVE | DOCKED | IN_SERVICE
+  yachtStatus        String   @default("ACTIVE")
+  maintenanceHealth  String?
+  /// HTTPS image URL for fleet card hero; optional
+  coverImageUrl      String?
+  createdAt          DateTime @default(now())
+
+  assignments    Assignment[]
+  workOrders     WorkOrder[]
+  logEntries     LogEntry[]
+  expenseLogs    ExpenseLog[]
+  calendarEvents CalendarEvent[]
+
+  // Documents
+  documentFolders DocumentFolder[]
+  documents       Document[]
+}
+
+model ExpenseLog {
+  id        String           @id @default(cuid())
+  yachtId   String
+  service   String
+  cost      Decimal          @db.Decimal(12, 2)
+  date      DateTime
+  comments  String?
+  status    ExpenseLogStatus @default(PENDING_APPROVAL)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  yacht Yacht @relation(fields: [yachtId], references: [id], onDelete: Cascade)
+
+  @@index([yachtId])
+  @@index([date])
+}
+
+model Assignment {
+  id        String   @id @default(cuid())
+  yachtId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  yacht Yacht @relation(fields: [yachtId], references: [id], onDelete: Cascade)
+  user  User  @relation("UserAssignments", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([yachtId, userId])
+  @@index([userId])
+  @@index([yachtId])
+}
+
+model WorkOrder {
+  id               String          @id @default(cuid())
+  yachtId          String
+  title            String
+  description      String?
+  equipmentName    String?
+  priority         Priority        @default(MEDIUM)
+  status           WorkOrderStatus @default(OPEN)
+  createdByUserId  String
+  assignedToUserId String?
+  startDate        DateTime?
+  dueDate          DateTime?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  comments    WorkOrderComment[]
+  attachments WorkOrderAttachment[] // ✅ ADD
+
+  yacht      Yacht @relation(fields: [yachtId], references: [id], onDelete: Cascade)
+  createdBy  User  @relation("WorkOrderCreatedBy", fields: [createdByUserId], references: [id])
+  assignedTo User? @relation("WorkOrderAssignedTo", fields: [assignedToUserId], references: [id])
+
+  logEntries LogEntry[]
+}
+
+model LogEntry {
+  id             String       @id @default(cuid())
+  yachtId        String
+  workOrderId    String?
+  authorUserId   String
+  entryType      LogEntryType
+  text           String?
+  statusSnapshot String?
+  createdAt      DateTime     @default(now())
+
+  yacht     Yacht      @relation(fields: [yachtId], references: [id], onDelete: Cascade)
+  workOrder WorkOrder? @relation(fields: [workOrderId], references: [id], onDelete: SetNull)
+  author    User       @relation(fields: [authorUserId], references: [id], onDelete: Cascade)
+
+  @@index([yachtId])
+  @@index([workOrderId])
+  @@index([authorUserId])
+  @@index([createdAt])
+}
+
+model CalendarEvent {
+  id              String    @id @default(cuid())
+  title           String
+  startAt         DateTime
+  endAt           DateTime?
+  yachtId         String?
+  assignedUserId  String?
+  createdByUserId String
+  createdAt       DateTime  @default(now())
+
+  yacht      Yacht? @relation(fields: [yachtId], references: [id], onDelete: SetNull)
+  assignedTo User?  @relation("CalendarEventAssignedTo", fields: [assignedUserId], references: [id], onDelete: SetNull)
+  createdBy  User   @relation("CalendarEventCreatedBy", fields: [createdByUserId], references: [id], onDelete: Cascade)
+
+  @@index([startAt])
+  @@index([yachtId])
+  @@index([assignedUserId])
+  @@index([createdByUserId])
+}
+
+model DocumentFolder {
+  id              String   @id @default(cuid())
+  name            String
+  yachtId         String?
+  createdByUserId String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  yacht     Yacht?     @relation(fields: [yachtId], references: [id], onDelete: SetNull)
+  createdBy User       @relation("DocumentFoldersCreatedBy", fields: [createdByUserId], references: [id])
+  documents Document[]
+
+  @@unique([name, yachtId])
+  @@index([yachtId])
+  @@index([createdByUserId])
+}
+
+model Document {
+  id              String   @id @default(cuid())
+  folderId        String
+  title           String
+  description     String?
+  externalUrl     String
+  yachtId         String?
+  createdByUserId String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  folder    DocumentFolder @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  yacht     Yacht?         @relation(fields: [yachtId], references: [id], onDelete: SetNull)
+  createdBy User           @relation("DocumentsCreatedBy", fields: [createdByUserId], references: [id])
+
+  @@index([folderId])
+  @@index([yachtId])
+  @@index([createdByUserId])
+}
+
+model WorkOrderComment {
+  id           String   @id @default(cuid())
+  workOrderId  String
+  authorUserId String
+  text         String
+  createdAt    DateTime @default(now())
+
+  workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  author    User      @relation(fields: [authorUserId], references: [id], onDelete: Cascade)
+
+  attachments WorkOrderCommentAttachment[]
+
+  @@index([workOrderId])
+  @@index([authorUserId])
+  @@index([createdAt])
+}
+
+model WorkOrderCommentAttachment {
+  id           String   @id @default(cuid())
+  commentId    String
+  uploaderUserId String
+  fileName     String
+  mimeType     String
+  sizeBytes    Int
+  storageKey   String   @unique
+  url          String?
+  createdAt    DateTime @default(now())
+
+  comment  WorkOrderComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  uploader User             @relation(fields: [uploaderUserId], references: [id], onDelete: Cascade)
+
+  @@index([commentId])
+  @@index([uploaderUserId])
+  @@index([createdAt])
+}
+
+model WorkOrderAttachment {
+  id             String   @id @default(cuid())
+  workOrderId    String
+  uploaderUserId String
+  fileName       String
+  mimeType       String
+  sizeBytes      Int
+  storageKey     String
+  url            String?
+  createdAt      DateTime @default(now())
+
+  workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  uploader  User      @relation(fields: [uploaderUserId], references: [id], onDelete: Cascade)
+
+  @@index([workOrderId])
+  @@index([uploaderUserId])
+  @@index([createdAt])
+}

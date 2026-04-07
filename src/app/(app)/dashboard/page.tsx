@@ -1,0 +1,366 @@
+import { Suspense } from "react";
+import Link from "next/link";
+import { getDashboardStats } from "@/actions/dashboard";
+import { listWorkOrders } from "@/actions/workOrders";
+import { listCrew } from "@/actions/users";
+import { listYachts } from "@/actions/yachts";
+
+import { DashboardSprintPlanning } from "@/components/DashboardSprintPlanning";
+import { DashboardCalendarPreview } from "@/components/DashboardCalendarPreview";
+import { MyYachtsWidget } from "@/components/MyYachtsWidget";
+import { CrewCard } from "@/components/CrewCard";
+
+/** Frosted glass panels + lift on hover (dashboard hero only) */
+const GLASS_PANEL =
+  "rounded-xl border border-white/20 bg-white/10 shadow-lg backdrop-blur-xl backdrop-saturate-150 transition-all duration-300 ease-out hover:scale-[1.015] hover:border-white/45 hover:bg-white/[0.15] hover:shadow-[0_24px_55px_-12px_rgba(0,0,0,0.52)]";
+
+function MetricCardsSkeleton() {
+  return (
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
+      <div className="lg:col-span-3 h-56 animate-pulse rounded-[var(--apple-radius)] bg-white/10 backdrop-blur-md" />
+      <div className="lg:col-span-1 h-56 animate-pulse rounded-[var(--apple-radius)] bg-white/10 backdrop-blur-md" />
+    </div>
+  );
+}
+
+function clampPercent(n: number) {
+  if (Number.isNaN(n) || !Number.isFinite(n)) return 0;
+  return Math.max(0, Math.min(100, Math.round(n)));
+}
+
+/** Helpers **/
+function addDays(d: Date, days: number) {
+  const x = new Date(d);
+  x.setDate(x.getDate() + days);
+  return x;
+}
+function isSameDay(a: Date, b: Date) {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+async function DashboardContent() {
+  const [statsRes, workOrdersRes, crewRes, yachtsRes] =
+    await Promise.all([
+      getDashboardStats(),
+      listWorkOrders(),
+      listCrew(),
+      listYachts(),
+    ]);
+
+  const yachts = (yachtsRes as any)?.data ?? [];
+  const stats = (statsRes as any)?.data ?? {};
+  const totalCompletionPercent = stats.totalCompletionPercent ?? 0;
+  const totalAssigned = stats.totalAssigned ?? 0;
+  const totalCompleted = stats.totalCompleted ?? 0;
+  const expenseTotal = stats.expenseTotal ?? 0;
+  const openTasks = totalAssigned - totalCompleted;
+
+  const workOrders = (workOrdersRes as any)?.data ?? [];
+  const crewRaw = (crewRes as any)?.data ?? [];
+
+  // ===== Day range: today -2 to today +4 (7 days) =====
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const rangeStart = addDays(now, -2);
+  const rangeEnd = addDays(now, 5); // exclusive end for +4 (today+0..+4)
+  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(rangeStart, i));
+
+  const ordersWithDue = (workOrders ?? []).filter((wo: any) => wo?.dueDate);
+
+  const weekOrders = ordersWithDue.filter((wo: any) => {
+    const due = new Date(wo.dueDate);
+    due.setHours(0, 0, 0, 0);
+    return due >= rangeStart && due < rangeEnd;
+  });
+
+  const weekTotal = weekOrders.length;
+  const weekCompleted = weekOrders.filter((wo: any) =>
+    ["DONE", "CLOSED"].includes(wo.status)
+  ).length;
+
+  const weekCompletionPercent =
+    weekTotal === 0 ? 0 : clampPercent((weekCompleted / weekTotal) * 100);
+
+  const PRIORITY_ORDER: Record<string, number> = {
+    CRITICAL: 0,
+    HIGH: 1,
+    MEDIUM: 2,
+    LOW: 3,
+  };
+  const weekBuckets = weekDays.map((day) => {
+    const items = weekOrders
+      .filter((wo: any) => isSameDay(new Date(wo.dueDate), day))
+      .sort((a: any, b: any) => (PRIORITY_ORDER[a.priority] ?? 4) - (PRIORITY_ORDER[b.priority] ?? 4))
+      .slice(0, 3);
+    return { day, items };
+  });
+
+  const calendarPreviewDays = weekBuckets.map(({ day, items }) => ({
+    iso: day.toISOString(),
+    items: items.map((wo: any) => ({
+      id: wo.id,
+      title: wo.title ?? "Task",
+      priority: wo.priority ?? "MEDIUM",
+      dueDate: wo.dueDate ? new Date(wo.dueDate).toISOString() : null,
+      status: wo.status ?? "OPEN",
+    })),
+  }));
+
+  // Crew: sort by On Shift first, then by role (Admin > Manager > Technician)
+  const ROLE_ORDER = ["ADMIN", "MANAGER", "TECHNICIAN"];
+  const crew = [...crewRaw].sort((a: any, b: any) => {
+    const aOnShift = a.shiftStatus === "ON_SHIFT" ? 1 : 0;
+    const bOnShift = b.shiftStatus === "ON_SHIFT" ? 1 : 0;
+    if (aOnShift !== bOnShift) return bOnShift - aOnShift; // On Shift first
+    const aRoleIdx = ROLE_ORDER.indexOf(a.role ?? "") >= 0 ? ROLE_ORDER.indexOf(a.role) : 99;
+    const bRoleIdx = ROLE_ORDER.indexOf(b.role ?? "") >= 0 ? ROLE_ORDER.indexOf(b.role) : 99;
+    return aRoleIdx - bRoleIdx; // Higher role first
+  });
+
+  return (
+    <>
+      {/* Summary cards row - reference style */}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <Link href="/tasks" className={`${GLASS_PANEL} block p-4`}>
+          <div className="flex items-start justify-between">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--ocean-coral-muted)]">
+              <svg className="h-5 w-5 text-[var(--accent-urgent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <span className="text-xs text-[var(--apple-text-tertiary)]">View All →</span>
+          </div>
+          <p className="mt-2 text-sm font-medium text-[var(--apple-text-secondary)]">Tasks</p>
+          <p className="mt-0.5 text-xl font-bold text-[var(--apple-text-primary)]">
+            <span className="text-[var(--accent-urgent)]">{openTasks}</span>
+            <span className="text-sm font-normal text-[var(--apple-text-secondary)]"> open</span>
+            {" · "}
+            <span className="text-[var(--apple-text-primary)]">{totalAssigned}</span>{" "}
+            <span className="text-sm font-normal text-[var(--apple-text-secondary)]">total</span>
+          </p>
+        </Link>
+        <Link href="/calendar" className={`${GLASS_PANEL} block p-4`}>
+          <div className="flex items-start justify-between">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--apple-accent-muted)]">
+              <svg className="h-5 w-5 text-[var(--apple-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <span className="text-xs text-[var(--apple-text-tertiary)]">View Schedule →</span>
+          </div>
+          <p className="mt-2 text-sm font-medium text-[var(--apple-text-secondary)]">Calendar</p>
+          <p className="mt-0.5 text-xl font-bold text-[var(--accent-upcoming)]">
+            {weekTotal} <span className="text-sm font-normal text-[var(--accent-upcoming)]">upcoming</span>
+          </p>
+        </Link>
+        <Link href="/logs" className={`${GLASS_PANEL} block p-4`}>
+          <div className="flex items-start justify-between">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--apple-accent-muted)]">
+              <svg className="h-5 w-5 text-[var(--apple-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <span className="text-xs text-[var(--apple-text-tertiary)]">View All →</span>
+          </div>
+          <p className="mt-2 text-sm font-medium text-[var(--apple-text-secondary)]">Recent Expenses</p>
+          <p className="mt-0.5 text-xl font-bold text-[var(--palette-muted-teal)]">
+            {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(expenseTotal)}
+          </p>
+        </Link>
+        <Link href="/documents" className={`${GLASS_PANEL} block p-4`}>
+          <div className="flex items-start justify-between">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--ocean-success-muted)]">
+              <svg className="h-5 w-5 text-[var(--palette-success-dark)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <span className="text-xs text-[var(--apple-text-tertiary)]">View Reports →</span>
+          </div>
+          <p className="mt-2 text-sm font-medium text-[var(--apple-text-secondary)]">Reports</p>
+          <p className="mt-0.5 text-sm font-medium text-[var(--apple-text-primary)]">Documents &amp; folders</p>
+        </Link>
+      </div>
+
+      {/* Two-column layout: Left = Calendar Preview + Task Assignments, Right = Completion + Crew + Expense Tracking */}
+      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-stretch">
+        {/* ——— LEFT COLUMN ——— */}
+        <div className="flex min-h-0 flex-col gap-6">
+          <DashboardCalendarPreview
+            days={calendarPreviewDays}
+            todayIso={now.toISOString()}
+            glass
+          />
+
+          {/* Task Assignments */}
+          <div className={`${GLASS_PANEL} p-5`}>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-lg font-bold text-[var(--apple-text-primary)]">
+                Task Assignments
+              </h2>
+              <Link
+                href="/tasks"
+                className="inline-flex items-center gap-2 rounded-lg bg-[var(--apple-accent)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--apple-accent-hover)]"
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Add Task
+              </Link>
+            </div>
+            <div className="mt-4">
+              <DashboardSprintPlanning workOrders={workOrders} inline glass />
+            </div>
+          </div>
+
+          {/* Expense Tracking - flex-1 so bottom aligns with Crew */}
+          <div className={`flex min-h-0 flex-1 flex-col ${GLASS_PANEL} p-5`}>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-lg font-bold text-[var(--apple-text-primary)]">
+                Expense Tracking
+              </h2>
+              <Link
+                href="/logs"
+                className="inline-flex items-center gap-2 rounded-lg bg-[var(--apple-accent)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--apple-accent-hover)]"
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Add Expense
+              </Link>
+            </div>
+            <p className="mt-4 text-2xl font-bold text-[var(--palette-muted-teal)]">
+              {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(expenseTotal)}
+            </p>
+            <p className="mt-0.5 text-sm text-[var(--apple-text-tertiary)]">total recorded</p>
+          </div>
+        </div>
+
+        {/* ——— RIGHT COLUMN ——— */}
+        <div className="flex min-h-0 flex-col gap-6">
+          {/* Completion */}
+          <div className={`flex flex-col ${GLASS_PANEL} p-5`}>
+            <div className="text-lg font-bold text-[var(--apple-text-primary)]">
+              Completion
+            </div>
+
+          {/* Range-based completion */}
+          <div className="mt-5">
+            <div className="text-sm font-medium text-[var(--apple-text-tertiary)]">
+              Tasks due in this range
+            </div>
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="text-3xl font-semibold text-[var(--apple-text-primary)]">
+                {weekCompletionPercent}%
+              </span>
+              <span className="text-sm text-[var(--apple-text-tertiary)]">
+                ({weekCompleted}/{weekTotal})
+              </span>
+            </div>
+            <div className="mt-2.5 h-2.5 w-full overflow-hidden rounded-[999px] border border-[var(--apple-border-muted)] bg-[var(--apple-bg-muted)]">
+              <div
+                className="h-full rounded-[999px] bg-[var(--apple-accent)]/60 transition-[width] duration-300"
+                style={{ width: `${weekCompletionPercent}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Total completion (all tasks assigned to user) */}
+          <div className="mt-6">
+            <div className="text-sm font-medium text-[var(--apple-text-tertiary)]">
+              Total (all your tasks)
+            </div>
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="text-3xl font-semibold text-[var(--apple-text-primary)]">
+                {totalCompletionPercent}%
+              </span>
+              <span className="text-sm text-[var(--apple-text-tertiary)]">
+                ({totalCompleted}/{totalAssigned})
+              </span>
+            </div>
+            <div className="mt-2.5 h-2.5 w-full overflow-hidden rounded-[999px] border border-[var(--apple-border-muted)] bg-[var(--apple-bg-muted)]">
+              <div
+                className="h-full rounded-[999px] bg-[var(--apple-accent)] transition-[width] duration-300"
+                style={{ width: `${totalCompletionPercent}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="mt-5 flex justify-end">
+            <Link
+              href="/tasks"
+              aria-label="Manage tasks"
+              className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--apple-accent)] text-white transition-colors hover:bg-[var(--apple-accent-hover)]"
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+            </Link>
+          </div>
+        </div>
+
+          {/* Crew - flex-1 so bottom aligns with Task Assignments */}
+          <div className={`flex min-h-0 flex-1 flex-col ${GLASS_PANEL} p-5`}>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-lg font-bold text-[var(--apple-text-primary)]">
+                Crew
+              </h2>
+              <Link
+                href="/crew"
+                className="inline-flex items-center gap-2 rounded-lg bg-[var(--apple-accent)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--apple-accent-hover)]"
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Manage Crew
+              </Link>
+            </div>
+            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {crew.length === 0 ? (
+                <p className="col-span-2 py-6 text-center text-sm text-[var(--apple-text-tertiary)]">
+                  No crew data
+                </p>
+              ) : (
+                crew.slice(0, 4).map((c: any) => (
+                  <CrewCard key={c.id} crew={c} showAssignments glass />
+                ))
+              )}
+            </div>
+            <Link
+              href="/crew"
+              className="mt-auto shrink-0 inline-block pt-3 text-sm font-medium text-[var(--apple-text-tertiary)] hover:text-[var(--apple-accent)]"
+            >
+              View all crew →
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* My Yachts - full width below two columns */}
+      <section className="mt-8">
+        <MyYachtsWidget yachts={yachts} glass />
+      </section>
+    </>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <div className="pt-6 sm:pt-8">
+      <h1 className="text-3xl font-semibold tracking-tight text-white drop-shadow-sm">
+        Dashboard
+      </h1>
+      <p className="mt-2 text-base text-white/75">
+        Overview of operations
+      </p>
+
+      <div className="mt-8">
+        <Suspense fallback={<MetricCardsSkeleton />}>
+          <DashboardContent />
+        </Suspense>
+      </div>
+    </div>
+  );
+}
