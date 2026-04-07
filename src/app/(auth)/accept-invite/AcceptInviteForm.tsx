@@ -10,8 +10,8 @@ function FormBody() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
-  /** Do not use useTransition with async server actions — isPending often never clears. */
-  const [submitting, setSubmitting] = useState(false);
+  type Phase = "idle" | "saving" | "saved";
+  const [phase, setPhase] = useState<Phase>("idle");
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -28,22 +28,28 @@ function FormBody() {
       setError("Passwords do not match.");
       return;
     }
-    setSubmitting(true);
+    setPhase("saving");
     try {
       const res = await acceptUserInvite(token, password);
       if (res?.error) {
         setError(res.error);
+        setPhase("idle");
         return;
       }
-      // Full navigation: reliable after server actions (client router sometimes does not update).
-      window.location.assign("/signin?invited=1");
+      setPhase("saved");
+      window.setTimeout(() => {
+        window.location.assign("/signin?invited=1");
+      }, 700);
     } catch (err) {
       console.error(err);
       setError("Something went wrong. Try again or open the invite link once more.");
-    } finally {
-      setSubmitting(false);
+      setPhase("idle");
     }
   }
+
+  const buttonLabel =
+    phase === "saved" ? "Saved" : phase === "saving" ? "Saving…" : "Accept invite";
+  const buttonBusy = phase === "saving" || phase === "saved";
 
   return (
     <form onSubmit={onSubmit} className="grid gap-4">
@@ -74,10 +80,10 @@ function FormBody() {
       {error ? <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</div> : null}
       <button
         type="submit"
-        disabled={submitting}
+        disabled={buttonBusy}
         className="w-full rounded-[var(--apple-radius)] bg-[var(--apple-accent)] py-2.5 text-sm font-semibold text-white hover:bg-[var(--apple-accent-hover)] disabled:opacity-60"
       >
-        {submitting ? "Saving…" : "Accept invite"}
+        {buttonLabel}
       </button>
     </form>
   );
