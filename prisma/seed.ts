@@ -73,7 +73,7 @@ async function main() {
 
   const yacht1 = await prisma.yacht.upsert({
     where: { id: "seed-yacht-1" },
-    update: { organizationId: org.id },
+    update: { organizationId: org.id, iconVariant: 2 },
     create: {
       id: "seed-yacht-1",
       organizationId: org.id,
@@ -84,12 +84,13 @@ async function main() {
       ownerName: "John Owner",
       marina: "Marina One",
       maintenanceHealth: "Good",
+      iconVariant: 2,
     },
   });
 
   const yacht2 = await prisma.yacht.upsert({
     where: { id: "seed-yacht-2" },
-    update: { organizationId: org.id },
+    update: { organizationId: org.id, iconVariant: 5 },
     create: {
       id: "seed-yacht-2",
       organizationId: org.id,
@@ -99,6 +100,7 @@ async function main() {
       year: 2021,
       ownerName: "Jane Owner",
       marina: "Marina Two",
+      iconVariant: 5,
     },
   });
 

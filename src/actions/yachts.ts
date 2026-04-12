@@ -107,6 +107,7 @@ export async function createYacht(formData: FormData) {
       yachtStatus,
       maintenanceHealth: maintenanceHealth?.trim() || null,
       coverImageUrl: null,
+      iconVariant: Math.floor(Math.random() * 6),
     },
   });
 

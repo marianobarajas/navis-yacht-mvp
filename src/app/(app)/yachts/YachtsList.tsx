@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { YachtCoverPlaceholder } from "@/components/yachts/YachtCoverPlaceholder";
+import { YachtSilhouetteIcon } from "@/components/yachts/YachtSilhouetteIcon";
+import { yachtIconGlyphClass, yachtIconWellClass } from "@/components/yachts/yachtIconWells";
 import { YachtCreateModal } from "./YachtCreateModal";
 
 type Yacht = {
@@ -16,6 +18,7 @@ type Yacht = {
   yachtStatus?: string;
   maintenanceHealth?: string | null;
   coverImageUrl?: string | null;
+  iconVariant?: number | null;
   assignments: { user: { id: string; name: string; profileImage?: string | null } }[];
 };
 
@@ -152,8 +155,17 @@ export function YachtsList({
                   {cover ? (
                     <img src={cover} alt="" className="h-full w-full object-cover" loading="lazy" />
                   ) : (
-                    <YachtCoverPlaceholder yachtId={y.id} />
+                    <YachtCoverPlaceholder yachtId={y.id} className="absolute inset-0" />
                   )}
+                  <div
+                    className={`pointer-events-none absolute bottom-2 left-2 z-[2] ${yachtIconWellClass(false, y.iconVariant)}`}
+                    aria-hidden
+                  >
+                    <YachtSilhouetteIcon
+                      variant={y.iconVariant ?? 0}
+                      className={`h-5 w-5 ${yachtIconGlyphClass(false)}`}
+                    />
+                  </div>
                   <span
                     className={`pointer-events-none absolute right-3 top-3 rounded-full px-2.5 py-1 text-xs font-semibold shadow-sm backdrop-blur-sm ${status.className}`}
                   >

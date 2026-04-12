@@ -574,8 +574,8 @@ function ExpenseLogAddRow({
           zebra ? "bg-[var(--apple-bg-subtle)]/60" : "bg-[var(--apple-bg-elevated)]"
         }`}
       >
-        <td className="w-12 px-3 py-2.5 text-left text-sm text-[var(--apple-text-tertiary)] align-top">+</td>
-        <td className="min-w-[12rem] px-3 py-2.5 text-left align-top">
+        <td className="w-12 px-3 py-2.5 text-left text-sm text-[var(--apple-text-tertiary)] align-middle">+</td>
+        <td className="min-w-[12rem] px-3 py-2.5 text-left align-middle">
           <input
             form={formId}
             name="service"
@@ -585,7 +585,7 @@ function ExpenseLogAddRow({
             autoFocus
           />
         </td>
-        <td className="px-3 py-2.5 text-right align-top">
+        <td className="px-3 py-2.5 text-right align-middle">
           <div className="flex w-full min-w-0 justify-end items-center gap-0.5">
             <span className="shrink-0 text-sm text-[var(--apple-text-tertiary)]">$</span>
             <input
@@ -599,7 +599,7 @@ function ExpenseLogAddRow({
             />
           </div>
         </td>
-        <td className="min-w-[7.5rem] px-3 py-2.5 text-left align-top">
+        <td className="min-w-[7.5rem] px-3 py-2.5 text-left align-middle">
           <input
             form={formId}
             name="date"
@@ -609,7 +609,7 @@ function ExpenseLogAddRow({
             className="logs-input text-left"
           />
         </td>
-        <td className="min-w-[10rem] px-3 py-2.5 text-left align-top">
+        <td className="min-w-[10rem] px-3 py-2.5 text-left align-middle">
           <input
             form={formId}
             name="comments"
@@ -617,10 +617,10 @@ function ExpenseLogAddRow({
             className="logs-input text-left"
           />
         </td>
-        <td className="px-2 py-2.5 text-center align-top">
+        <td className="px-2 py-2.5 text-center align-middle">
           <span className="text-xs text-[var(--apple-text-tertiary)]">New</span>
         </td>
-        <td className="min-w-[7.5rem] px-2 py-2.5 text-right align-top">
+        <td className="min-w-[7.5rem] px-2 py-2.5 text-right align-middle">
           <div className="flex items-center justify-end gap-1.5">
             {canCreateTask && (
               <label className="flex cursor-pointer items-center gap-1.5 text-xs text-[var(--apple-text-secondary)]">
@@ -656,7 +656,7 @@ function ExpenseLogAddRow({
       </tr>
       {canCreateTask && createTask && (
         <tr className={`border-b border-[var(--apple-border)] ${zebra ? "bg-[var(--apple-bg-subtle)]/60" : "bg-[var(--apple-bg-elevated)]"}`}>
-          <td colSpan={7} className="px-4 py-2 align-top">
+          <td colSpan={7} className="px-4 py-2 align-middle">
             <div className="flex flex-wrap items-end gap-3 pl-2">
               <div className="min-w-[120px]">
                 <label className="mb-1 block text-xs font-medium text-[var(--apple-text-secondary)]">Priority</label>
@@ -774,13 +774,13 @@ function ExpenseLogTable({
             </colgroup>
             <thead>
               <tr className="border-b border-[var(--apple-border)] bg-[var(--apple-bg-subtle)]">
-                <th className="w-12 px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--apple-text-tertiary)]">No.</th>
-                <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--apple-text-tertiary)]">Service</th>
-                <th className="px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-[var(--apple-text-tertiary)]">Cost</th>
-                <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--apple-text-tertiary)]">Date</th>
-                <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--apple-text-tertiary)]">Comments</th>
-                <th className="px-2 py-3 text-center text-xs font-semibold uppercase tracking-wider text-[var(--apple-text-tertiary)]">Status</th>
-                <th className="px-2 py-3 text-right text-xs font-semibold uppercase tracking-wider text-[var(--apple-text-tertiary)]">Actions</th>
+                <th className="w-12 align-middle px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--apple-text-tertiary)]">No.</th>
+                <th className="align-middle px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--apple-text-tertiary)]">Service</th>
+                <th className="align-middle px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-[var(--apple-text-tertiary)]">Cost</th>
+                <th className="align-middle px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--apple-text-tertiary)]">Date</th>
+                <th className="align-middle px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--apple-text-tertiary)]">Comments</th>
+                <th className="align-middle px-2 py-3 text-center text-xs font-semibold uppercase tracking-wider text-[var(--apple-text-tertiary)]">Status</th>
+                <th className="align-middle px-2 py-3 text-right text-xs font-semibold uppercase tracking-wider text-[var(--apple-text-tertiary)]">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -801,7 +801,7 @@ function ExpenseLogTable({
               const newRow = (
                 <Fragment key={`new-expense-${addRowKey}`}>
                   <tr className="border-b border-[var(--apple-border)] bg-[var(--apple-bg-subtle)]">
-                    <td colSpan={7} className="px-4 py-2 text-left text-sm font-semibold text-[var(--apple-text-primary)]">
+                    <td colSpan={7} className="align-middle px-4 py-2 text-left text-sm font-semibold text-[var(--apple-text-primary)]">
                       New expense
                     </td>
                   </tr>
@@ -827,7 +827,7 @@ function ExpenseLogTable({
                   .reduce((n, g) => n + g.sorted.length, 0);
                 return [
                   <tr key={`h-${group.monthKey}`} className="border-b border-[var(--apple-border)] bg-[var(--apple-bg-subtle)]">
-                    <td colSpan={7} className="px-4 py-2 text-left text-sm font-semibold text-[var(--apple-text-primary)]">
+                    <td colSpan={7} className="align-middle px-4 py-2 text-left text-sm font-semibold text-[var(--apple-text-primary)]">
                       {formatMonthHeader(group.sorted[0]!.date)}
                     </td>
                   </tr>,
@@ -869,14 +869,14 @@ function ExpenseLogTable({
             </colgroup>
             <tfoot>
               <tr className="border-t-2 border-[var(--apple-border-strong)] bg-[var(--apple-bg-subtle)] font-semibold shadow-[0_-2px_8px_rgba(25,37,60,0.08)]">
-                <td className="px-4 py-3.5 text-left text-[var(--apple-text-primary)]">Total</td>
-                <td className="px-4 py-3.5 text-left text-[var(--apple-text-primary)]">
+                <td className="align-middle px-4 py-3.5 text-left text-[var(--apple-text-primary)]">Total</td>
+                <td className="align-middle px-4 py-3.5 text-left text-[var(--apple-text-primary)]">
                   {logs.length} {logs.length === 1 ? "item" : "items"}
                 </td>
-                <td className="px-4 py-3.5 text-right tabular-nums text-[var(--apple-text-primary)]">
+                <td className="align-middle px-4 py-3.5 text-right tabular-nums text-[var(--apple-text-primary)]">
                   {formatUsd(logs.reduce((sum, l) => sum + getCostNum(l), 0))}
                 </td>
-                <td colSpan={4} />
+                <td colSpan={4} className="align-middle" />
               </tr>
             </tfoot>
           </table>
@@ -999,8 +999,8 @@ function ExpenseLogRow({
       ref={rowRef}
       className={`border-b border-[var(--apple-border)] transition-colors ${isEditing ? "bg-[var(--apple-accent-muted)]/30" : ""} ${zebra && !isEditing ? "bg-[var(--apple-bg-subtle)]/60" : !isEditing ? "bg-[var(--apple-bg-elevated)]" : ""} ${!isEditing ? "hover:bg-[var(--apple-bg-subtle)]" : ""}`}
     >
-      <td className="w-12 px-3 py-2.5 text-left text-sm tabular-nums text-[var(--apple-text-tertiary)] align-top">{index}</td>
-      <td className="min-w-0 px-3 py-2.5 text-left align-top">
+      <td className="w-12 px-3 py-2.5 text-left text-sm tabular-nums text-[var(--apple-text-tertiary)] align-middle">{index}</td>
+      <td className="min-w-0 px-3 py-2.5 text-left align-middle">
         {isEditing ? (
           <input
             name="service"
@@ -1013,7 +1013,7 @@ function ExpenseLogRow({
           <span className="block break-words font-medium leading-snug text-[var(--apple-text-primary)]">{log.service}</span>
         )}
       </td>
-      <td className="min-w-0 px-3 py-2.5 text-right align-top">
+      <td className="min-w-0 px-3 py-2.5 text-right align-middle">
         {isEditing ? (
           <div className="flex w-full min-w-0 justify-end items-center gap-0.5">
             <span className="shrink-0 text-sm text-[var(--apple-text-tertiary)]">$</span>
@@ -1030,7 +1030,7 @@ function ExpenseLogRow({
           <span className="inline-block whitespace-nowrap tabular-nums text-[var(--apple-text-primary)]">{formatUsd(cost)}</span>
         )}
       </td>
-      <td className="min-w-0 px-3 py-2.5 text-left align-top">
+      <td className="min-w-0 px-3 py-2.5 text-left align-middle">
         {isEditing ? (
           <input
             name="date"
@@ -1043,7 +1043,7 @@ function ExpenseLogRow({
           <span className="whitespace-nowrap text-[var(--apple-text-secondary)]">{formatDateDDMMYY(log.date)}</span>
         )}
       </td>
-      <td className="min-w-0 px-3 py-2.5 text-left align-top">
+      <td className="min-w-0 px-3 py-2.5 text-left align-middle">
         {isEditing ? (
           <input
             name="comments"
@@ -1056,7 +1056,7 @@ function ExpenseLogRow({
           </span>
         )}
       </td>
-      <td className="min-w-0 px-2 py-2.5 text-center align-top">
+      <td className="min-w-0 px-2 py-2.5 text-center align-middle">
         {isEditing ? (
           <span className="text-xs text-[var(--apple-text-tertiary)]">—</span>
         ) : (
@@ -1101,7 +1101,7 @@ function ExpenseLogRow({
           </div>
         )}
       </td>
-      <td className="min-w-0 px-2 py-2.5 text-right align-top">
+      <td className="min-w-0 px-2 py-2.5 text-right align-middle">
         <div className="flex flex-wrap items-center justify-end gap-1">
           {isEditing ? (
             <>
@@ -1162,7 +1162,7 @@ function ExpenseLogRow({
     </tr>
     {isEditing && canCreateTask && createTask && (
       <tr className={`border-b border-[var(--apple-border)] ${zebra ? "bg-[var(--apple-bg-subtle)]/60" : "bg-[var(--apple-bg-elevated)]"}`}>
-        <td colSpan={7} className="px-4 py-2 align-top">
+        <td colSpan={7} className="px-4 py-2 align-middle">
           <div className="flex flex-wrap items-end gap-3 pl-2">
             <div className="min-w-[120px]">
               <label className="mb-1 block text-xs font-medium text-[var(--apple-text-secondary)]">Priority</label>

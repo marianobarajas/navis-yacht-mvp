@@ -141,6 +141,8 @@ model Yacht {
   maintenanceHealth  String?
   /// HTTPS image URL for fleet card hero; optional
   coverImageUrl      String?
+  /// 0–5: which dashboard / fleet silhouette SVG to show (set randomly on create)
+  iconVariant        Int      @default(0)
   createdAt          DateTime @default(now())
 
   assignments    Assignment[]

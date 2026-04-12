@@ -1,11 +1,14 @@
 import Link from "next/link";
-import { accentStripByIndex, iconTileAccentByIndex } from "@/lib/uiAccent";
+import { accentStripByIndex } from "@/lib/uiAccent";
+import { YachtSilhouetteIcon } from "@/components/yachts/YachtSilhouetteIcon";
+import { yachtIconGlyphClass, yachtIconWellClass } from "@/components/yachts/yachtIconWells";
 
 type Yacht = {
   id: string;
   name: string;
   registrationNumber: string;
   marina: string;
+  iconVariant?: number | null;
   assignments?: { user: { id: string } }[];
 };
 
@@ -30,7 +33,11 @@ export function MyYachtsWidget({ yachts, glass }: { yachts: Yacht[]; glass?: boo
         </p>
         <Link
           href="/yachts"
-          className="mt-3 block text-center text-base font-medium text-[var(--apple-accent)] hover:underline"
+          className={
+            glass
+              ? "mt-3 block text-center text-base font-semibold text-white/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)] hover:text-white hover:underline"
+              : "mt-3 block text-center text-base font-medium text-[var(--apple-accent)] hover:underline"
+          }
         >
           View maintenance →
         </Link>
@@ -51,7 +58,6 @@ export function MyYachtsWidget({ yachts, glass }: { yachts: Yacht[]; glass?: boo
       </h3>
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {yachts.map((y, i) => {
-          const tile = iconTileAccentByIndex(i);
           return (
             <Link
               key={y.id}
@@ -62,10 +68,8 @@ export function MyYachtsWidget({ yachts, glass }: { yachts: Yacht[]; glass?: boo
                   : `flex items-center gap-3 overflow-hidden rounded-[var(--apple-radius)] border border-[var(--apple-border)] border-l-4 p-4 transition-colors hover:bg-[var(--apple-bg-subtle)] hover:border-[var(--apple-border-strong)] ${accentStripByIndex(i)}`
               }
             >
-              <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--apple-radius)] ${tile.box}`}>
-                <svg className={`h-5 w-5 ${tile.icon}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                </svg>
+              <div className={yachtIconWellClass(glass, y.iconVariant)}>
+                <YachtSilhouetteIcon variant={y.iconVariant ?? 0} className={`h-6 w-6 ${yachtIconGlyphClass(glass)}`} />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="font-semibold text-[var(--apple-text-primary)]">
@@ -86,7 +90,11 @@ export function MyYachtsWidget({ yachts, glass }: { yachts: Yacht[]; glass?: boo
       </div>
       <Link
         href="/yachts"
-        className="mt-4 block text-base font-medium text-[var(--apple-accent)] hover:underline"
+        className={
+          glass
+            ? "mt-4 block text-base font-semibold text-white/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)] hover:text-white hover:underline"
+            : "mt-4 block text-base font-medium text-[var(--apple-accent)] hover:underline"
+        }
       >
         View all yachts →
       </Link>
