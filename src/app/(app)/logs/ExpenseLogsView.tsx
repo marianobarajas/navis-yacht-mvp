@@ -212,15 +212,8 @@ export function ExpenseLogsView({
     router.push(`/logs?${params.toString()}`);
   }
 
-  if (yachts.length === 0) {
-    return (
-      <div className="mt-6 rounded-[var(--apple-radius)] border border-[var(--apple-border)] bg-[var(--apple-bg-elevated)] p-6 text-center text-[var(--apple-text-tertiary)]">
-        No yachts available. Add a yacht first to track expenses.
-      </div>
-    );
-  }
-
-  const effectiveYachtId = selectedYachtId ?? yachts[0]?.id ?? null;
+  const effectiveYachtId =
+    yachts.length === 0 ? null : (selectedYachtId ?? yachts[0]?.id ?? null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [showTotalsDropdown, setShowTotalsDropdown] = useState(false);
   const totalsRef = useRef<HTMLDivElement>(null);
@@ -362,6 +355,14 @@ export function ExpenseLogsView({
       return () => document.removeEventListener("mousedown", handleClickOutside);
     }
   }, [showTotalsDropdown]);
+
+  if (yachts.length === 0) {
+    return (
+      <div className="mt-6 rounded-[var(--apple-radius)] border border-[var(--apple-border)] bg-[var(--apple-bg-elevated)] p-6 text-center text-[var(--apple-text-tertiary)]">
+        No yachts available. Add a yacht first to track expenses.
+      </div>
+    );
+  }
 
   return (
     <div className="mt-6 flex w-full min-w-0 flex-1 min-h-0 flex-col">
@@ -791,7 +792,12 @@ function ExpenseLogTable({
                 grouped.get(key)!.push(log);
               }
               const months = Array.from(grouped.entries()).sort(([a], [b]) => b.localeCompare(a));
-              let rowIndex = 0;
+              const sortedGroups = months.map(([monthKey, monthLogs]) => ({
+                monthKey,
+                sorted: [...monthLogs].sort(
+                  (a, b) => parseLogDate(a.date).getTime() - parseLogDate(b.date).getTime(),
+                ),
+              }));
               const newRow = (
                 <Fragment key={`new-expense-${addRowKey}`}>
                   <tr className="border-b border-[var(--apple-border)] bg-[var(--apple-bg-subtle)]">
@@ -815,18 +821,18 @@ function ExpenseLogTable({
                   />
                 </Fragment>
               );
-              const monthRows = months.flatMap(([monthKey, monthLogs]) => {
-                const sortedMonthLogs = [...monthLogs].sort(
-                  (a, b) => parseLogDate(a.date).getTime() - parseLogDate(b.date).getTime(),
-                );
+              const monthRows = sortedGroups.flatMap((group, gi) => {
+                const logsBefore = sortedGroups
+                  .slice(0, gi)
+                  .reduce((n, g) => n + g.sorted.length, 0);
                 return [
-                  <tr key={`h-${monthKey}`} className="border-b border-[var(--apple-border)] bg-[var(--apple-bg-subtle)]">
+                  <tr key={`h-${group.monthKey}`} className="border-b border-[var(--apple-border)] bg-[var(--apple-bg-subtle)]">
                     <td colSpan={7} className="px-4 py-2 text-left text-sm font-semibold text-[var(--apple-text-primary)]">
-                      {formatMonthHeader(sortedMonthLogs[0]!.date)}
+                      {formatMonthHeader(group.sorted[0]!.date)}
                     </td>
                   </tr>,
-                  ...sortedMonthLogs.map((log) => {
-                    rowIndex += 1;
+                  ...group.sorted.map((log, i) => {
+                    const rowIndex = logsBefore + i + 1;
                     const isEven = rowIndex % 2 === 0;
                     return (
                       <ExpenseLogRow
