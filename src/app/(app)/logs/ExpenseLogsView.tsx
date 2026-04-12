@@ -574,8 +574,8 @@ function ExpenseLogAddRow({
           zebra ? "bg-[var(--apple-bg-subtle)]/60" : "bg-[var(--apple-bg-elevated)]"
         }`}
       >
-        <td className="px-4 py-2 text-left text-sm text-[var(--apple-text-tertiary)] align-middle">+</td>
-        <td className="px-4 py-2 text-left align-middle overflow-hidden">
+        <td className="w-12 px-3 py-2.5 text-left text-sm text-[var(--apple-text-tertiary)] align-top">+</td>
+        <td className="min-w-[12rem] px-3 py-2.5 text-left align-top">
           <input
             form={formId}
             name="service"
@@ -585,8 +585,8 @@ function ExpenseLogAddRow({
             autoFocus
           />
         </td>
-        <td className="px-4 py-2 text-right align-middle overflow-hidden">
-          <div className="flex w-full justify-end items-center overflow-hidden">
+        <td className="px-3 py-2.5 text-right align-top">
+          <div className="flex w-full min-w-0 justify-end items-center gap-0.5">
             <span className="shrink-0 text-sm text-[var(--apple-text-tertiary)]">$</span>
             <input
               form={formId}
@@ -595,11 +595,11 @@ function ExpenseLogAddRow({
               step="0.01"
               min="0"
               placeholder="0.00"
-              className="logs-input no-spinner min-w-0 flex-1 text-right max-w-[6rem]"
+              className="logs-input no-spinner min-w-0 max-w-[7.5rem] flex-1 text-right tabular-nums"
             />
           </div>
         </td>
-        <td className="px-4 py-2 text-left align-middle overflow-hidden">
+        <td className="min-w-[7.5rem] px-3 py-2.5 text-left align-top">
           <input
             form={formId}
             name="date"
@@ -609,7 +609,7 @@ function ExpenseLogAddRow({
             className="logs-input text-left"
           />
         </td>
-        <td className="px-4 py-2 text-left align-middle overflow-hidden">
+        <td className="min-w-[10rem] px-3 py-2.5 text-left align-top">
           <input
             form={formId}
             name="comments"
@@ -617,10 +617,10 @@ function ExpenseLogAddRow({
             className="logs-input text-left"
           />
         </td>
-        <td className="px-4 py-2 text-center align-middle">
+        <td className="px-2 py-2.5 text-center align-top">
           <span className="text-xs text-[var(--apple-text-tertiary)]">New</span>
         </td>
-        <td className="px-4 py-2 text-right align-middle">
+        <td className="min-w-[7.5rem] px-2 py-2.5 text-right align-top">
           <div className="flex items-center justify-end gap-1.5">
             {canCreateTask && (
               <label className="flex cursor-pointer items-center gap-1.5 text-xs text-[var(--apple-text-secondary)]">
@@ -761,26 +761,26 @@ function ExpenseLogTable({
       />
 
       <div className="flex w-full min-h-0 flex-1 flex-col overflow-hidden rounded-[var(--apple-radius)] border border-[var(--apple-border)] bg-[var(--apple-bg-elevated)] shadow-[var(--apple-shadow-sm)] min-w-0">
-        <div className="logs-table-scroll min-h-0 min-w-0 w-full flex-1 overflow-x-hidden overflow-y-auto flex flex-col">
-          <table className="w-full table-fixed border-collapse text-sm shrink-0" style={{ tableLayout: "fixed" }}>
+        <div className="logs-table-scroll min-h-0 min-w-0 w-full flex-1 overflow-x-auto overflow-y-auto flex flex-col">
+          <table className="w-full min-w-[1040px] table-fixed border-collapse text-sm shrink-0">
             <colgroup>
-              <col style={{ width: "56px" }} />
-              <col style={{ width: "18%" }} />
-              <col style={{ width: "96px" }} />
-              <col style={{ width: "110px" }} />
-              <col />
-              <col style={{ width: "120px" }} />
-              <col style={{ width: "155px" }} />
+              <col style={{ width: "4%" }} />
+              <col style={{ width: "28%" }} />
+              <col style={{ width: "15%" }} />
+              <col style={{ width: "10%" }} />
+              <col style={{ width: "20%" }} />
+              <col style={{ width: "13%" }} />
+              <col style={{ width: "10%" }} />
             </colgroup>
             <thead>
               <tr className="border-b border-[var(--apple-border)] bg-[var(--apple-bg-subtle)]">
-                <th className="w-14 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--apple-text-tertiary)]">No.</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--apple-text-tertiary)]">Service</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-[var(--apple-text-tertiary)]">Cost</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--apple-text-tertiary)]">Date</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--apple-text-tertiary)]">Comments</th>
-                <th className="w-[120px] px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-[var(--apple-text-tertiary)]">Status</th>
-                <th className="w-[155px] px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-[var(--apple-text-tertiary)]">Actions</th>
+                <th className="w-12 px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--apple-text-tertiary)]">No.</th>
+                <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--apple-text-tertiary)]">Service</th>
+                <th className="px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-[var(--apple-text-tertiary)]">Cost</th>
+                <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--apple-text-tertiary)]">Date</th>
+                <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--apple-text-tertiary)]">Comments</th>
+                <th className="px-2 py-3 text-center text-xs font-semibold uppercase tracking-wider text-[var(--apple-text-tertiary)]">Status</th>
+                <th className="px-2 py-3 text-right text-xs font-semibold uppercase tracking-wider text-[var(--apple-text-tertiary)]">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -857,15 +857,15 @@ function ExpenseLogTable({
         </table>
           {/* Spacer pushes Totals to bottom when there are few rows */}
           <div className="min-h-0 flex-1" aria-hidden />
-          <table className="sticky bottom-0 z-10 w-full table-fixed border-collapse text-sm shrink-0">
+          <table className="sticky bottom-0 z-10 w-full min-w-[1040px] table-fixed border-collapse text-sm shrink-0">
             <colgroup>
-              <col style={{ width: "56px" }} />
-              <col style={{ width: "18%" }} />
-              <col style={{ width: "96px" }} />
-              <col style={{ width: "110px" }} />
-              <col />
-              <col style={{ width: "120px" }} />
-              <col style={{ width: "155px" }} />
+              <col style={{ width: "4%" }} />
+              <col style={{ width: "28%" }} />
+              <col style={{ width: "15%" }} />
+              <col style={{ width: "10%" }} />
+              <col style={{ width: "20%" }} />
+              <col style={{ width: "13%" }} />
+              <col style={{ width: "10%" }} />
             </colgroup>
             <tfoot>
               <tr className="border-t-2 border-[var(--apple-border-strong)] bg-[var(--apple-bg-subtle)] font-semibold shadow-[0_-2px_8px_rgba(25,37,60,0.08)]">
@@ -999,8 +999,8 @@ function ExpenseLogRow({
       ref={rowRef}
       className={`border-b border-[var(--apple-border)] transition-colors ${isEditing ? "bg-[var(--apple-accent-muted)]/30" : ""} ${zebra && !isEditing ? "bg-[var(--apple-bg-subtle)]/60" : !isEditing ? "bg-[var(--apple-bg-elevated)]" : ""} ${!isEditing ? "hover:bg-[var(--apple-bg-subtle)]" : ""}`}
     >
-      <td className="px-4 py-2 text-left text-sm tabular-nums text-[var(--apple-text-tertiary)]">{index}</td>
-      <td className="px-4 py-2 text-left align-middle overflow-hidden">
+      <td className="w-12 px-3 py-2.5 text-left text-sm tabular-nums text-[var(--apple-text-tertiary)] align-top">{index}</td>
+      <td className="min-w-0 px-3 py-2.5 text-left align-top">
         {isEditing ? (
           <input
             name="service"
@@ -1010,12 +1010,12 @@ function ExpenseLogRow({
             autoFocus
           />
         ) : (
-          <span className="block truncate font-medium text-[var(--apple-text-primary)]">{log.service}</span>
+          <span className="block break-words font-medium leading-snug text-[var(--apple-text-primary)]">{log.service}</span>
         )}
       </td>
-      <td className="px-4 py-2 text-right align-middle overflow-hidden">
+      <td className="min-w-0 px-3 py-2.5 text-right align-top">
         {isEditing ? (
-          <div className="flex w-full justify-end items-center overflow-hidden">
+          <div className="flex w-full min-w-0 justify-end items-center gap-0.5">
             <span className="shrink-0 text-sm text-[var(--apple-text-tertiary)]">$</span>
             <input
               name="cost"
@@ -1023,14 +1023,14 @@ function ExpenseLogRow({
               step="0.01"
               min="0"
               defaultValue={formatCostPlain(cost)}
-              className="logs-input no-spinner min-w-0 flex-1 text-right max-w-[6rem]"
+              className="logs-input no-spinner min-w-0 max-w-[7.5rem] flex-1 text-right tabular-nums"
             />
           </div>
         ) : (
-          <span className="tabular-nums text-[var(--apple-text-primary)]">{formatUsd(cost)}</span>
+          <span className="inline-block whitespace-nowrap tabular-nums text-[var(--apple-text-primary)]">{formatUsd(cost)}</span>
         )}
       </td>
-      <td className="px-4 py-2 text-left align-middle overflow-hidden">
+      <td className="min-w-0 px-3 py-2.5 text-left align-top">
         {isEditing ? (
           <input
             name="date"
@@ -1040,10 +1040,10 @@ function ExpenseLogRow({
             className="logs-input text-left"
           />
         ) : (
-          <span className="text-[var(--apple-text-secondary)]">{formatDateDDMMYY(log.date)}</span>
+          <span className="whitespace-nowrap text-[var(--apple-text-secondary)]">{formatDateDDMMYY(log.date)}</span>
         )}
       </td>
-      <td className="px-4 py-2 text-left align-middle overflow-hidden">
+      <td className="min-w-0 px-3 py-2.5 text-left align-top">
         {isEditing ? (
           <input
             name="comments"
@@ -1051,12 +1051,12 @@ function ExpenseLogRow({
             className="logs-input text-left"
           />
         ) : (
-          <span className="block truncate text-[var(--apple-text-tertiary)]" title={log.comments ?? undefined}>
+          <span className="block break-words leading-snug text-[var(--apple-text-tertiary)]" title={log.comments ?? undefined}>
             {log.comments ?? "—"}
           </span>
         )}
       </td>
-      <td className="px-4 py-2 text-center align-middle">
+      <td className="min-w-0 px-2 py-2.5 text-center align-top">
         {isEditing ? (
           <span className="text-xs text-[var(--apple-text-tertiary)]">—</span>
         ) : (
@@ -1065,7 +1065,7 @@ function ExpenseLogRow({
               ref={statusButtonRef}
               type="button"
               onClick={() => setShowStatusDropdown(!showStatusDropdown)}
-              className={`inline-flex min-w-[100px] shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded px-2.5 py-1.5 text-xs font-medium transition-colors ${statusStyles[currentStatus]} hover:opacity-90`}
+              className={`inline-flex max-w-full min-w-0 shrink items-center justify-center gap-1.5 whitespace-normal rounded px-2 py-1.5 text-center text-xs font-medium leading-tight transition-colors ${statusStyles[currentStatus]} hover:opacity-90`}
             >
               {STATUS_LABELS[currentStatus]}
               <svg className={`h-3.5 w-3.5 transition-transform ${showStatusDropdown ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1101,8 +1101,8 @@ function ExpenseLogRow({
           </div>
         )}
       </td>
-      <td className="px-4 py-2 text-right align-middle">
-        <div className="flex items-center justify-end gap-1">
+      <td className="min-w-0 px-2 py-2.5 text-right align-top">
+        <div className="flex flex-wrap items-center justify-end gap-1">
           {isEditing ? (
             <>
               {canCreateTask && (

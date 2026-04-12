@@ -141,6 +141,18 @@ export function DashboardCalendarPreview({
       ? "flex flex-col rounded-xl border border-white/20 bg-white/10 p-5 shadow-lg backdrop-blur-xl backdrop-saturate-150 transition-all duration-300 ease-out hover:scale-[1.015] hover:border-white/45 hover:bg-white/[0.15] hover:shadow-[0_24px_55px_-12px_rgba(0,0,0,0.52)]"
       : "flex flex-col rounded-xl border border-[var(--apple-border)] bg-[var(--apple-bg-elevated)] p-5 shadow-sm";
 
+  const navChevronBtn =
+    glass === true
+      ? "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/40 bg-black/25 text-white shadow-sm transition-colors hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-40"
+      : "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--apple-border)] text-[var(--apple-text-secondary)] transition-colors hover:bg-[var(--apple-bg-subtle)] disabled:cursor-not-allowed disabled:opacity-40";
+
+  const weekStripBorder = glass === true ? "border-white/35" : "border-[var(--apple-border)]";
+
+  const todayBtnClass =
+    glass === true
+      ? "shrink-0 rounded-lg border border-white/45 bg-white/18 px-3 py-1.5 text-sm font-semibold text-white shadow-sm drop-shadow-[0_1px_2px_rgba(0,0,0,0.65)] transition-colors hover:bg-white/28"
+      : "shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium text-[var(--apple-accent)] hover:bg-[var(--apple-accent-muted)]";
+
   return (
     <div className={shell}>
       <div className="flex items-start justify-between gap-3">
@@ -189,12 +201,12 @@ export function DashboardCalendarPreview({
       </div>
 
       {/* Week navigator */}
-      <div className="mt-4 flex items-center gap-2 border-b border-[var(--apple-border)] pb-3">
+      <div className={`mt-4 flex items-center gap-2 border-b pb-3 ${weekStripBorder}`}>
         <button
           type="button"
           onClick={goPrevDay}
           disabled={selectedIdx <= 0}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--apple-border)] text-[var(--apple-text-secondary)] transition-colors hover:bg-[var(--apple-bg-subtle)] disabled:cursor-not-allowed disabled:opacity-40"
+          className={navChevronBtn}
           aria-label="Previous day"
         >
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -204,7 +216,7 @@ export function DashboardCalendarPreview({
         <button
           type="button"
           onClick={jumpToday}
-          className="shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium text-[var(--apple-accent)] hover:bg-[var(--apple-accent-muted)]"
+          className={todayBtnClass}
         >
           Today
         </button>
@@ -217,23 +229,43 @@ export function DashboardCalendarPreview({
                 key={d.iso}
                 type="button"
                 onClick={() => setSelectedIso(d.iso)}
-                className={`flex min-w-[2.25rem] flex-col items-center rounded-lg px-1 py-1.5 transition-colors sm:min-w-[2.5rem] ${
-                  isSel
-                    ? "ring-2 ring-[var(--apple-accent)] ring-offset-1 ring-offset-white"
-                    : "hover:bg-[var(--apple-bg-subtle)]"
-                }`}
+                className={
+                  glass === true
+                    ? `flex min-w-[2.25rem] flex-col items-center rounded-lg px-1 py-1.5 transition-colors sm:min-w-[2.5rem] ${
+                        isSel
+                          ? "bg-white/22 ring-2 ring-amber-200/90 text-white shadow-md drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]"
+                          : "hover:bg-white/10"
+                      }`
+                    : `flex min-w-[2.25rem] flex-col items-center rounded-lg px-1 py-1.5 transition-colors sm:min-w-[2.5rem] ${
+                        isSel
+                          ? "ring-2 ring-[var(--apple-accent)] ring-offset-1 ring-offset-white"
+                          : "hover:bg-[var(--apple-bg-subtle)]"
+                      }`
+                }
               >
-                <span className="text-[10px] font-medium uppercase text-[var(--apple-text-tertiary)]">
+                <span
+                  className={
+                    glass === true
+                      ? `text-[10px] font-medium uppercase ${isSel ? "text-white/90" : "text-white/65"}`
+                      : "text-[10px] font-medium uppercase text-[var(--apple-text-tertiary)]"
+                  }
+                >
                   {fmtWeekdayLetter(d.iso)}
                 </span>
                 <span
-                  className={`mt-0.5 text-sm font-bold tabular-nums ${
-                    isSel
-                      ? "text-[var(--apple-accent)]"
-                      : isToday
-                        ? "text-[var(--apple-text-primary)]"
-                        : "text-[var(--apple-text-secondary)]"
-                  }`}
+                  className={
+                    glass === true
+                      ? `mt-0.5 text-sm font-bold tabular-nums ${
+                          isSel ? "text-white" : isToday ? "text-amber-200" : "text-white/90"
+                        }`
+                      : `mt-0.5 text-sm font-bold tabular-nums ${
+                          isSel
+                            ? "text-[var(--apple-accent)]"
+                            : isToday
+                              ? "text-[var(--apple-text-primary)]"
+                              : "text-[var(--apple-text-secondary)]"
+                        }`
+                  }
                 >
                   {fmtDayNum(d.iso)}
                 </span>
@@ -245,7 +277,7 @@ export function DashboardCalendarPreview({
           type="button"
           onClick={goNextDay}
           disabled={selectedIdx >= dayList.length - 1}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--apple-border)] text-[var(--apple-text-secondary)] transition-colors hover:bg-[var(--apple-bg-subtle)] disabled:cursor-not-allowed disabled:opacity-40"
+          className={navChevronBtn}
           aria-label="Next day"
         >
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -257,7 +289,13 @@ export function DashboardCalendarPreview({
       {/* Event list */}
       <div className="mt-4 space-y-3">
         {items.length === 0 ? (
-          <p className="py-6 text-center text-sm text-[var(--apple-text-tertiary)]">
+          <p
+            className={
+              glass === true
+                ? "py-6 text-center text-sm text-white/80 drop-shadow-[0_1px_2px_rgba(0,0,0,0.55)]"
+                : "py-6 text-center text-sm text-[var(--apple-text-tertiary)]"
+            }
+          >
             No tasks for this day
             {overdueFilter === "overdue" ? " (overdue filter)" : ""}.
           </p>
@@ -360,7 +398,11 @@ export function DashboardCalendarPreview({
 
       <Link
         href="/calendar"
-        className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-[var(--apple-text-tertiary)] hover:text-[var(--apple-accent)]"
+        className={
+          glass === true
+            ? "mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-white/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)] transition-colors hover:text-white"
+            : "mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-[var(--apple-text-tertiary)] hover:text-[var(--apple-accent)]"
+        }
       >
         View Full Calendar
         <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
