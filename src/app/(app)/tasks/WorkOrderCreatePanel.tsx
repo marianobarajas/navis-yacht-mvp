@@ -52,7 +52,7 @@ export default function WorkOrderCreatePanel({
                 <XIcon className="h-5 w-5" />
               </button>
             </div>
-            <div className="max-h-[min(70vh,520px)] overflow-y-auto px-6 py-5">
+            <div className="max-h-[min(70vh,520px)] overflow-y-auto overflow-x-visible px-6 py-5">
               <WorkOrderCreateForm
                 yachts={yachts}
                 users={users}

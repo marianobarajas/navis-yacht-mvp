@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useRef, useEffect, useLayoutEffect, useMemo } from "react";
+import { Fragment, useState, useRef, useEffect, useLayoutEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
-import { PlusIcon, CheckIcon, XIcon, PencilIcon, TrashIcon } from "@/components/ui/Icons";
+import { CheckIcon, XIcon, PencilIcon, TrashIcon } from "@/components/ui/Icons";
 import { formatDateDDMMYY, toDateInputValue } from "@/lib/dateUtils";
 import {
   createExpenseLog,
@@ -200,7 +200,6 @@ export function ExpenseLogsView({
   }
 
   const effectiveYachtId = selectedYachtId ?? yachts[0]?.id ?? null;
-  const [showAddForm, setShowAddForm] = useState(false);
   const [showTotalsDropdown, setShowTotalsDropdown] = useState(false);
   const totalsRef = useRef<HTMLDivElement>(null);
 
@@ -347,16 +346,6 @@ export function ExpenseLogsView({
                 <p className="mt-2 text-base text-[var(--apple-text-tertiary)]">{subtitle}</p>
               )}
             </div>
-            {effectiveYachtId && (
-              <button
-                type="button"
-                onClick={() => setShowAddForm(true)}
-                className="inline-flex shrink-0 items-center gap-2 rounded-[var(--apple-radius)] bg-[var(--apple-accent)] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[var(--apple-accent-hover)]"
-              >
-                <PlusIcon className="h-4 w-4" />
-                Add expense
-              </button>
-            )}
           </div>
         )}
         <div className="flex flex-wrap items-end justify-between gap-4">
@@ -498,8 +487,6 @@ export function ExpenseLogsView({
               logs={filteredLogs}
               pending={pending}
               startTransition={startTransition}
-              showAddForm={showAddForm}
-              onCloseAddForm={() => setShowAddForm(false)}
               users={users}
               canCreateTask={canCreateTask}
             />
@@ -658,8 +645,6 @@ function ExpenseLogTable({
   logs,
   pending,
   startTransition,
-  showAddForm,
-  onCloseAddForm,
   users,
   canCreateTask,
 }: {
@@ -667,8 +652,6 @@ function ExpenseLogTable({
   logs: ExpenseLog[];
   pending: boolean;
   startTransition: (fn: () => void) => void;
-  showAddForm: boolean;
-  onCloseAddForm: () => void;
   users: User[];
   canCreateTask: boolean;
 }) {
@@ -755,17 +738,29 @@ function ExpenseLogTable({
               }
               const months = Array.from(grouped.entries()).sort(([a], [b]) => b.localeCompare(a));
               let rowIndex = 0;
-              const rows = [
-                ...(showAddForm && months.length === 0
-                  ? [
-                      <tr key="new-header" className="border-b border-[var(--apple-border)] bg-[var(--apple-bg-subtle)]">
-                        <td colSpan={7} className="px-4 py-2 text-left text-sm font-semibold text-[var(--apple-text-primary)]">
-                          New entry
-                        </td>
-                      </tr>,
-                    ]
-                  : []),
-                ...months.flatMap(([monthKey, monthLogs]) => [
+              const newRow = (
+                <Fragment key={`new-expense-${addRowKey}`}>
+                  <tr className="border-b border-[var(--apple-border)] bg-[var(--apple-bg-subtle)]">
+                    <td colSpan={7} className="px-4 py-2 text-left text-sm font-semibold text-[var(--apple-text-primary)]">
+                      New expense
+                    </td>
+                  </tr>
+                  <ExpenseLogAddRow
+                    formId="expense-add-form"
+                    onCancel={() => {
+                      setCreateTask(false);
+                      addFormRef.current?.reset();
+                      setAddRowKey((k) => k + 1);
+                    }}
+                    createTask={createTask}
+                    setCreateTask={setCreateTask}
+                    canCreateTask={canCreateTask}
+                    users={users}
+                    zebra={false}
+                  />
+                </Fragment>
+              );
+              const monthRows = months.flatMap(([monthKey, monthLogs]) => [
                 <tr key={`h-${monthKey}`} className="border-b border-[var(--apple-border)] bg-[var(--apple-bg-subtle)]">
                   <td colSpan={7} className="px-4 py-2 text-left text-sm font-semibold text-[var(--apple-text-primary)]">
                     {formatMonthHeader(monthLogs[0].date)}
@@ -789,64 +784,42 @@ function ExpenseLogTable({
                     />
                   );
                 }),
-              ])
-            ];
-              return [
-                ...rows,
-                ...(showAddForm
-                  ? [
-                      <ExpenseLogAddRow
-                        key={`add-row-${addRowKey}`}
-                        formId="expense-add-form"
-                        onCancel={() => {
-                          setCreateTask(false);
-                          onCloseAddForm();
-                        }}
-                        createTask={createTask}
-                        setCreateTask={setCreateTask}
-                        canCreateTask={canCreateTask}
-                        users={users}
-                        zebra={(logs.length + 1) % 2 === 0}
-                      />,
-                    ]
-                  : []),
-              ];
+              ]);
+              return [newRow, ...monthRows];
             })()}
           </tbody>
         </table>
           {/* Spacer pushes Totals to bottom when there are few rows */}
           <div className="min-h-0 flex-1" aria-hidden />
-          {(logs.length > 0 || showAddForm) && (
-            <table className="sticky bottom-0 z-10 w-full table-fixed border-collapse text-sm shrink-0">
-              <colgroup>
-                <col style={{ width: "56px" }} />
-                <col style={{ width: "18%" }} />
-                <col style={{ width: "96px" }} />
-                <col style={{ width: "110px" }} />
-                <col />
-                <col style={{ width: "120px" }} />
-                <col style={{ width: "155px" }} />
-              </colgroup>
-              <tfoot>
-                <tr className="border-t-2 border-[var(--apple-border-strong)] bg-[var(--apple-bg-subtle)] font-semibold shadow-[0_-2px_8px_rgba(25,37,60,0.08)]">
-                  <td className="px-4 py-3.5 text-left text-[var(--apple-text-primary)]">Total</td>
-                  <td className="px-4 py-3.5 text-left text-[var(--apple-text-primary)]">
-                    {logs.length} {logs.length === 1 ? "item" : "items"}
-                  </td>
-                  <td className="px-4 py-3.5 text-right tabular-nums text-[var(--apple-text-primary)]">
-                    ${formatCost(logs.reduce((sum, l) => sum + getCostNum(l), 0))}
-                  </td>
-                  <td colSpan={4} />
-                </tr>
-              </tfoot>
-            </table>
-          )}
+          <table className="sticky bottom-0 z-10 w-full table-fixed border-collapse text-sm shrink-0">
+            <colgroup>
+              <col style={{ width: "56px" }} />
+              <col style={{ width: "18%" }} />
+              <col style={{ width: "96px" }} />
+              <col style={{ width: "110px" }} />
+              <col />
+              <col style={{ width: "120px" }} />
+              <col style={{ width: "155px" }} />
+            </colgroup>
+            <tfoot>
+              <tr className="border-t-2 border-[var(--apple-border-strong)] bg-[var(--apple-bg-subtle)] font-semibold shadow-[0_-2px_8px_rgba(25,37,60,0.08)]">
+                <td className="px-4 py-3.5 text-left text-[var(--apple-text-primary)]">Total</td>
+                <td className="px-4 py-3.5 text-left text-[var(--apple-text-primary)]">
+                  {logs.length} {logs.length === 1 ? "item" : "items"}
+                </td>
+                <td className="px-4 py-3.5 text-right tabular-nums text-[var(--apple-text-primary)]">
+                  ${formatCost(logs.reduce((sum, l) => sum + getCostNum(l), 0))}
+                </td>
+                <td colSpan={4} />
+              </tr>
+            </tfoot>
+          </table>
         </div>
       </div>
 
-      {logs.length === 0 && !pending && !showAddForm && (
+      {logs.length === 0 && !pending && (
         <div className="p-6 text-center text-[var(--apple-text-tertiary)]">
-          No expense entries yet. Click Add Log to create one.
+          No saved expense lines yet. Use the <strong className="text-[var(--apple-text-secondary)]">New expense</strong> row above to add one.
         </div>
       )}
     </div>

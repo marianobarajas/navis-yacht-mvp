@@ -67,26 +67,41 @@ export async function getPlatformOrganizationById(organizationId: string) {
 
 export async function createTenantFromPlatform(formData: FormData) {
   const session = await requirePlatformSession();
-  if (!session) return { error: "Unauthorized" as const, slug: null as string | null };
+  if (!session) {
+    return {
+      error: "Unauthorized" as const,
+      slug: null as string | null,
+      emailError: null as string | null,
+      devEmailSkipped: false,
+    };
+  }
 
   const companyName = String(formData.get("companyName") ?? "").trim();
   const adminEmail = String(formData.get("adminEmail") ?? "").trim();
   const adminName = String(formData.get("adminName") ?? "").trim();
-  const adminPassword = String(formData.get("adminPassword") ?? "");
   const slugRaw = String(formData.get("slug") ?? "").trim();
 
   const result = await provisionOrganization({
     companyName,
     adminEmail,
     adminName,
-    adminPassword,
     slug: slugRaw || undefined,
   });
 
   if (result.error) {
-    return { error: result.error, slug: null as string | null };
+    return {
+      error: result.error,
+      slug: null as string | null,
+      emailError: null as string | null,
+      devEmailSkipped: false,
+    };
   }
 
   revalidatePath("/platform", "layout");
-  return { error: null as null, slug: result.slug };
+  return {
+    error: null as null,
+    slug: result.slug,
+    emailError: result.emailError ?? null,
+    devEmailSkipped: Boolean(result.devEmailSkipped),
+  };
 }

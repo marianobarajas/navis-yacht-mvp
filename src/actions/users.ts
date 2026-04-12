@@ -532,6 +532,13 @@ export async function updateUserPermissionOverrides(
 
 const INVITE_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000;
 
+function formatInviteEmailError(detail: string): string {
+  if (/testing emails to your own email|verify a domain at resend/i.test(detail)) {
+    return `${detail} To deliver invites to other inboxes: verify your domain at https://resend.com/domains and set RESEND_FROM in your environment to an address on that domain.`;
+  }
+  return detail;
+}
+
 /** Create a pending user and email an invite link (no password until they accept). */
 export async function sendUserInvite(formData: FormData) {
   const session = await getServerSession(authOptions);
@@ -595,7 +602,7 @@ export async function sendUserInvite(formData: FormData) {
   const mail = await sendInviteEmail({ to: email, name, inviteToken });
   if (mail.error) {
     await prisma.user.delete({ where: { id: created.id } });
-    return { error: mail.error };
+    return { error: formatInviteEmailError(mail.error) };
   }
 
   revalidatePath("/admin/users");

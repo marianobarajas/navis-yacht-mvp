@@ -9,7 +9,8 @@
  *
  * Non-interactive options:
  *
- *   ORG_NAME="..." ADMIN_EMAIL="..." ADMIN_NAME="..." ADMIN_PASSWORD="..." npm run provision-org
+ *   ORG_NAME="..." ADMIN_EMAIL="..." ADMIN_NAME="..." [ADMIN_PASSWORD="..."] npm run provision-org
+ *   (ADMIN_PASSWORD optional — a temporary password is generated and emailed when omitted.)
  *
  *   npx tsx scripts/provision-org.ts "<company>" <email> "<admin name>" "<password>" [slug]
  */
@@ -71,31 +72,27 @@ async function promptInteractive(): Promise<{
 }
 
 async function main() {
-  const fromEnv =
-    process.env.ORG_NAME &&
-    process.env.ADMIN_EMAIL &&
-    process.env.ADMIN_NAME &&
-    process.env.ADMIN_PASSWORD;
+  const fromEnv = process.env.ORG_NAME && process.env.ADMIN_EMAIL && process.env.ADMIN_NAME;
 
   let companyName: string;
   let adminEmail: string;
   let adminName: string;
-  let adminPassword: string;
+  let adminPassword: string | undefined;
   let slug: string | undefined;
 
   if (fromEnv) {
     companyName = process.env.ORG_NAME!.trim();
     adminEmail = process.env.ADMIN_EMAIL!.trim();
     adminName = process.env.ADMIN_NAME!.trim();
-    adminPassword = process.env.ADMIN_PASSWORD!;
+    adminPassword = process.env.ADMIN_PASSWORD?.trim() || undefined;
     slug = process.env.ORG_SLUG?.trim() || undefined;
   } else {
     const [, , a, b, c, d, e] = process.argv;
-    if (a && b && c && d) {
+    if (a && b && c) {
       companyName = a;
       adminEmail = b;
       adminName = c;
-      adminPassword = d;
+      adminPassword = d?.trim() || undefined;
       slug = e?.trim() || undefined;
     } else {
       const answers = await promptInteractive();
@@ -107,7 +104,7 @@ async function main() {
     }
   }
 
-  if (!companyName || !adminEmail || !adminName || !adminPassword) {
+  if (!companyName || !adminEmail || !adminName) {
     console.error("Missing required fields.");
     process.exit(1);
   }
@@ -127,7 +124,13 @@ async function main() {
 
   console.log("\nDone.");
   console.log("  Organization slug:", result.slug);
-  console.log("  Admin signs in at /login with:", adminEmail);
+  console.log("  Admin signs in at /signin with:", adminEmail);
+  if ("emailError" in result && result.emailError) {
+    console.warn("  Email warning:", result.emailError);
+  }
+  if ("devEmailSkipped" in result && result.devEmailSkipped) {
+    console.warn("  Dev: welcome email skipped — see server logs for temporary password.");
+  }
   console.log("  Next: log in as that admin, then add yachts and invite crew.\n");
 }
 

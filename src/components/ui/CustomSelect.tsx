@@ -108,7 +108,7 @@ export function CustomSelect({
         createPortal(
           <div
             id="custom-select-dropdown"
-            className="custom-select-dropdown fixed z-[100] min-w-[200px] max-h-60 overflow-auto rounded-[var(--apple-radius)] border-2 border-[var(--apple-border-strong)] bg-[var(--apple-bg-elevated)] py-1"
+            className="custom-select-dropdown fixed z-[6000] min-w-[200px] max-h-60 overflow-auto rounded-[var(--apple-radius)] border-2 border-[var(--apple-border-strong)] bg-[var(--apple-bg-elevated)] py-1"
             style={{
               top: dropdownPos.top,
               left: dropdownPos.left,

@@ -97,6 +97,9 @@ export function TaskCard({ wo }: TaskCardProps) {
         </div>
         <div className="min-w-0 flex-1">
           <h3 className="font-semibold text-[var(--apple-text-primary)]">{wo.title}</h3>
+          <p className="mt-0.5 text-sm font-medium text-[var(--apple-text-secondary)]">
+            {wo.assignedTo?.name ?? "Unassigned"}
+          </p>
           {subtitleParts.length > 0 ? (
             <p className="mt-0.5 text-sm text-[var(--apple-text-tertiary)]">{subtitleParts.join(" · ")}</p>
           ) : null}

@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
 import { YachtCoverPlaceholder } from "@/components/yachts/YachtCoverPlaceholder";
 import { YachtCreateModal } from "./YachtCreateModal";
 
@@ -20,9 +19,7 @@ type Yacht = {
   assignments: { user: { id: string; name: string; profileImage?: string | null } }[];
 };
 
-type FleetTab = "all" | "active" | "docked" | "service";
-
-function fleetKind(y: Yacht): Exclude<FleetTab, "all"> {
+function fleetKind(y: Yacht): "active" | "docked" | "service" {
   const st = y.yachtStatus;
   if (st === "DOCKED") return "docked";
   if (st === "IN_SERVICE") return "service";
@@ -33,7 +30,7 @@ function fleetKind(y: Yacht): Exclude<FleetTab, "all"> {
   return "active";
 }
 
-function statusForKind(kind: Exclude<FleetTab, "all">) {
+function statusForKind(kind: "active" | "docked" | "service") {
   switch (kind) {
     case "active":
       return {
@@ -82,13 +79,6 @@ function healthUi(y: Yacht) {
   };
 }
 
-const FLEET_TABS: { id: FleetTab; label: string }[] = [
-  { id: "all", label: "All yachts" },
-  { id: "active", label: "Active" },
-  { id: "docked", label: "Docked" },
-  { id: "service", label: "In service" },
-];
-
 export function YachtsList({
   yachts,
   canManage,
@@ -96,38 +86,18 @@ export function YachtsList({
   yachts: Yacht[];
   canManage: boolean;
 }) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
-
-  const rawFleet = searchParams.get("fleet") ?? "all";
-  const fleetTab = (
-    ["all", "active", "docked", "service"].includes(rawFleet) ? rawFleet : "all"
-  ) as FleetTab;
-
-  function setFleetTab(tab: FleetTab) {
-    const params = new URLSearchParams(searchParams.toString());
-    if (tab === "all") params.delete("fleet");
-    else params.set("fleet", tab);
-    router.push(`/yachts?${params.toString()}`);
-  }
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    let list = q
-      ? yachts.filter(
-          (y) =>
-            y.name.toLowerCase().includes(q) ||
-            y.registrationNumber.toLowerCase().includes(q) ||
-            y.marina.toLowerCase().includes(q)
-        )
-      : yachts;
-
-    if (fleetTab !== "all") {
-      list = list.filter((y) => fleetKind(y) === fleetTab);
-    }
-    return list;
-  }, [yachts, search, fleetTab]);
+    if (!q) return yachts;
+    return yachts.filter(
+      (y) =>
+        y.name.toLowerCase().includes(q) ||
+        y.registrationNumber.toLowerCase().includes(q) ||
+        y.marina.toLowerCase().includes(q)
+    );
+  }, [yachts, search]);
 
   return (
     <div>
@@ -157,26 +127,6 @@ export function YachtsList({
           />
         </div>
         {canManage ? <YachtCreateModal /> : null}
-      </div>
-
-      <div className="mt-6 flex gap-1 overflow-x-auto border-b border-[var(--apple-border)] pb-px">
-        {FLEET_TABS.map((t) => {
-          const active = fleetTab === t.id;
-          return (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => setFleetTab(t.id)}
-              className={`shrink-0 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${
-                active
-                  ? "border-[var(--apple-accent)] text-[var(--apple-accent)]"
-                  : "border-transparent text-[var(--apple-text-secondary)] hover:text-[var(--apple-text-primary)]"
-              }`}
-            >
-              {t.label}
-            </button>
-          );
-        })}
       </div>
 
       <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">

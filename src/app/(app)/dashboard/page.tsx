@@ -10,9 +10,14 @@ import { DashboardCalendarPreview } from "@/components/DashboardCalendarPreview"
 import { MyYachtsWidget } from "@/components/MyYachtsWidget";
 import { CrewCard } from "@/components/CrewCard";
 
-/** Frosted glass panels + lift on hover (dashboard hero only) */
+/** Frosted glass panels + lift on hover (dashboard hero only) — ring + stronger icon wells for contrast on photo */
 const GLASS_PANEL =
-  "rounded-xl border border-white/20 bg-white/10 shadow-lg backdrop-blur-xl backdrop-saturate-150 transition-all duration-300 ease-out hover:scale-[1.015] hover:border-white/45 hover:bg-white/[0.15] hover:shadow-[0_24px_55px_-12px_rgba(0,0,0,0.52)]";
+  "rounded-xl border border-white/25 bg-white/12 shadow-lg shadow-black/20 ring-1 ring-white/20 backdrop-blur-xl backdrop-saturate-150 transition-all duration-300 ease-out hover:scale-[1.015] hover:border-white/50 hover:bg-white/[0.18] hover:ring-white/35 hover:shadow-[0_24px_55px_-12px_rgba(0,0,0,0.55)]";
+
+const ICON_WELL =
+  "flex h-10 w-10 items-center justify-center rounded-lg border border-white/25 bg-white/20 shadow-inner shadow-black/10";
+const DASH_CTA =
+  "inline-flex items-center gap-2 rounded-lg border border-white/25 bg-[var(--apple-accent)] px-4 py-2 text-sm font-semibold text-white shadow-md shadow-black/25 ring-1 ring-white/20 transition-colors hover:bg-[var(--apple-accent-hover)] hover:ring-white/35";
 
 function MetricCardsSkeleton() {
   return (
@@ -126,8 +131,8 @@ async function DashboardContent() {
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Link href="/tasks" className={`${GLASS_PANEL} block p-4`}>
           <div className="flex items-start justify-between">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--ocean-coral-muted)]">
-              <svg className="h-5 w-5 text-[var(--accent-urgent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className={`${ICON_WELL} bg-[var(--ocean-coral-muted)]`}>
+              <svg className="h-5 w-5 text-[var(--accent-urgent)] drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.25}>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </div>
@@ -144,8 +149,8 @@ async function DashboardContent() {
         </Link>
         <Link href="/calendar" className={`${GLASS_PANEL} block p-4`}>
           <div className="flex items-start justify-between">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--apple-accent-muted)]">
-              <svg className="h-5 w-5 text-[var(--apple-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className={`${ICON_WELL} bg-[var(--apple-accent-muted)]`}>
+              <svg className="h-5 w-5 text-[var(--apple-accent)] drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.25}>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
             </div>
@@ -158,8 +163,8 @@ async function DashboardContent() {
         </Link>
         <Link href="/logs" className={`${GLASS_PANEL} block p-4`}>
           <div className="flex items-start justify-between">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--apple-accent-muted)]">
-              <svg className="h-5 w-5 text-[var(--apple-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className={`${ICON_WELL} bg-[var(--apple-accent-muted)]`}>
+              <svg className="h-5 w-5 text-[var(--apple-accent)] drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.25}>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
@@ -172,8 +177,8 @@ async function DashboardContent() {
         </Link>
         <Link href="/documents" className={`${GLASS_PANEL} block p-4`}>
           <div className="flex items-start justify-between">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--ocean-success-muted)]">
-              <svg className="h-5 w-5 text-[var(--palette-success-dark)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className={`${ICON_WELL} bg-[var(--ocean-success-muted)]`}>
+              <svg className="h-5 w-5 text-[var(--palette-success-dark)] drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.25}>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </div>
@@ -200,12 +205,9 @@ async function DashboardContent() {
               <h2 className="text-lg font-bold text-[var(--apple-text-primary)]">
                 Task Assignments
               </h2>
-              <Link
-                href="/tasks"
-                className="inline-flex items-center gap-2 rounded-lg bg-[var(--apple-accent)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--apple-accent-hover)]"
-              >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              <Link href="/tasks" className={DASH_CTA}>
+                <svg className="h-4 w-4 drop-shadow" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                 </svg>
                 Add Task
               </Link>
@@ -221,14 +223,11 @@ async function DashboardContent() {
               <h2 className="text-lg font-bold text-[var(--apple-text-primary)]">
                 Expense Tracking
               </h2>
-              <Link
-                href="/logs"
-                className="inline-flex items-center gap-2 rounded-lg bg-[var(--apple-accent)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--apple-accent-hover)]"
-              >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              <Link href="/logs" className={DASH_CTA}>
+                <svg className="h-4 w-4 drop-shadow" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                 </svg>
-                Add Expense
+                View expenses
               </Link>
             </div>
             <p className="mt-4 text-2xl font-bold text-[var(--palette-muted-teal)]">
@@ -292,10 +291,10 @@ async function DashboardContent() {
             <Link
               href="/tasks"
               aria-label="Manage tasks"
-              className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--apple-accent)] text-white transition-colors hover:bg-[var(--apple-accent-hover)]"
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/25 bg-[var(--apple-accent)] text-white shadow-md shadow-black/25 ring-1 ring-white/20 transition-colors hover:bg-[var(--apple-accent-hover)] hover:ring-white/35"
             >
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              <svg className="h-5 w-5 drop-shadow" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.25}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
               </svg>
             </Link>
           </div>
@@ -307,12 +306,9 @@ async function DashboardContent() {
               <h2 className="text-lg font-bold text-[var(--apple-text-primary)]">
                 Crew
               </h2>
-              <Link
-                href="/crew"
-                className="inline-flex items-center gap-2 rounded-lg bg-[var(--apple-accent)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--apple-accent-hover)]"
-              >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              <Link href="/crew" className={DASH_CTA}>
+                <svg className="h-4 w-4 drop-shadow" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                 </svg>
                 Manage Crew
               </Link>

@@ -2,8 +2,15 @@
  * Onboarding helper for a **new** customer (not a Server Action — import from scripts/API routes only).
  * New Organization + first ADMIN user. Run via `npx tsx scripts/provision-org.ts` or internal admin API.
  */
+import { randomBytes } from "node:crypto";
 import { hash } from "bcryptjs";
 import { prisma } from "@/lib/db";
+import { sendTenantWelcomeEmail } from "@/lib/mail";
+
+function generateInitialAdminPassword() {
+  const part = randomBytes(12).toString("base64url").replace(/[^a-zA-Z0-9]/g, "").slice(0, 12);
+  return `Navis-${part}`;
+}
 
 function slugify(name: string) {
   const s = name
@@ -19,14 +26,15 @@ export async function provisionOrganization(input: {
   slug?: string;
   adminEmail: string;
   adminName: string;
-  adminPassword: string;
+  /** If omitted, a strong temporary password is generated and emailed (when mail is configured). */
+  adminPassword?: string;
 }) {
   const name = input.companyName.trim();
   const email = input.adminEmail.toLowerCase().trim();
   const adminName = input.adminName.trim();
-  const pw = input.adminPassword;
-  if (!name || !email || !adminName || !pw || pw.length < 8) {
-    return { error: "Invalid input: need company name, admin name/email, password (min 8 chars)." };
+  const pw = (input.adminPassword?.trim() || generateInitialAdminPassword()) as string;
+  if (!name || !email || !adminName || pw.length < 8) {
+    return { error: "Invalid input: need company name, admin name, and valid email." };
   }
 
   let slug = input.slug?.trim() || slugify(name);
@@ -58,5 +66,18 @@ export async function provisionOrganization(input: {
     });
   });
 
-  return { error: null, slug };
+  const mail = await sendTenantWelcomeEmail({
+    to: email,
+    name: adminName,
+    companyName: name,
+    email,
+    temporaryPassword: pw,
+  });
+
+  return {
+    error: null as null,
+    slug,
+    emailError: mail.error ?? undefined,
+    devEmailSkipped: mail.devSkipped === true,
+  };
 }

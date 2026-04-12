@@ -20,7 +20,14 @@ export function PlatformNewTenantForm() {
         return;
       }
       e.currentTarget.reset();
-      setMessage({ type: "ok", text: `Organization created. Slug: ${res.slug}. The admin can sign in at /signin.` });
+      let ok = `Organization created. Slug: ${res.slug}. A temporary password was generated and emailed to the admin (sign in at /signin).`;
+      if (res.emailError) {
+        ok += ` Note: ${res.emailError}`;
+      } else if (res.devEmailSkipped) {
+        ok +=
+          " (Dev: no email sent — check the server console for the temporary password; set RESEND_API_KEY to send mail.)";
+      }
+      setMessage({ type: "ok", text: ok });
       router.refresh();
     });
   }
@@ -32,7 +39,8 @@ export function PlatformNewTenantForm() {
     >
       <h2 className="text-lg font-semibold text-[var(--apple-text-primary)]">Add organization</h2>
       <p className="text-sm text-[var(--apple-text-tertiary)]">
-        Creates a new tenant and their first ADMIN (same rules as <code className="text-xs">npm run provision-org</code>).
+        Creates a new tenant and their first ADMIN. A temporary password is generated automatically and sent to the admin
+        email (when Resend is configured).
       </p>
 
       {message ? (
@@ -70,19 +78,6 @@ export function PlatformNewTenantForm() {
           <input
             name="adminName"
             required
-            className="w-full rounded-[var(--apple-radius)] border border-[var(--apple-border)] bg-white px-3 py-2 text-sm"
-          />
-        </label>
-        <label className="block sm:col-span-2">
-          <span className="mb-1 block text-xs font-medium text-[var(--apple-text-secondary)]">
-            First admin password (min 8 characters)
-          </span>
-          <input
-            name="adminPassword"
-            type="password"
-            autoComplete="new-password"
-            required
-            minLength={8}
             className="w-full rounded-[var(--apple-radius)] border border-[var(--apple-border)] bg-white px-3 py-2 text-sm"
           />
         </label>

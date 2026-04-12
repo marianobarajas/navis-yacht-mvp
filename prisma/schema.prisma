@@ -80,6 +80,8 @@ model User {
   shiftStatus         ShiftStatus @default(OFF_DUTY)
   permissionOverrides    Json?    // { [permissionKey: string]: boolean } to override role defaults
   notificationPreferences Json?    // { taskAssigned?: boolean, dueToday?: boolean, taskUpdated?: boolean }; default true when missing
+  /// Set when the user dismisses the first-login app tour (dashboard).
+  appTourCompletedAt    DateTime?
   createdAt              DateTime @default(now())
 
   assignmentsAsUser      Assignment[]       @relation("UserAssignments")
