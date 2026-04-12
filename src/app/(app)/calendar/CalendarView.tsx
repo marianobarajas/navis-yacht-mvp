@@ -36,6 +36,7 @@ const PRIORITIES = ["LOW", "MEDIUM", "HIGH", "CRITICAL"] as const;
 type CalendarEventLite = {
   id: string;
   title: string;
+  description?: string | null;
   startAt: string | Date;
   endAt?: string | Date | null;
   yachtId?: string | null;
@@ -66,6 +67,7 @@ type RbcEvent = {
     taskId?: string;
     yachtId?: string | null;
     assignedUserId?: string | null;
+    description?: string | null;
     _startAtISO: string;
     _endAtISO: string | null;
   };
@@ -143,6 +145,7 @@ export default function CalendarView({
           eventId: e.id,
           yachtId: e.yachtId ?? null,
           assignedUserId: e.assignedUserId ?? null,
+          description: e.description ?? null,
           _startAtISO: startRaw.toISOString(),
           _endAtISO: endRaw ? endRaw.toISOString() : null,
         },
@@ -274,6 +277,7 @@ export default function CalendarView({
     setSelected({
       id: res.eventId ?? ev.id,
       title: ev.title ?? "",
+      description: res.description ?? null,
       startAt,
       endAt,
       yachtId,
@@ -432,6 +436,20 @@ export default function CalendarView({
                   placeholder="e.g. Engine inspection"
                 />
               </div>
+
+              {!createTask ? (
+                <div className="grid gap-2">
+                  <label className="text-sm font-medium text-[var(--apple-text-secondary)]">
+                    Comment / description (optional)
+                  </label>
+                  <textarea
+                    name="eventDescription"
+                    rows={3}
+                    className="apple-input w-full px-3 py-2 text-sm"
+                    placeholder="Context, agenda, or notes…"
+                  />
+                </div>
+              ) : null}
 
               <div className="grid gap-2">
                 <label className="text-sm font-medium text-[var(--apple-text-secondary)]">

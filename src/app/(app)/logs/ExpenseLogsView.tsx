@@ -1,10 +1,20 @@
 "use client";
 
-import { Fragment, useState, useRef, useEffect, useLayoutEffect, useMemo } from "react";
+import {
+  Fragment,
+  useState,
+  useRef,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 import { createPortal } from "react-dom";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
-import { CheckIcon, XIcon, PencilIcon, TrashIcon } from "@/components/ui/Icons";
+import { CheckIcon, XIcon, PencilIcon, TrashIcon, PlusIcon } from "@/components/ui/Icons";
+import { ExpenseLogsPdfExportButton } from "./ExpenseLogsPdfExportButton";
 import { formatDateDDMMYY, toDateInputValue } from "@/lib/dateUtils";
 import {
   createExpenseLog,
@@ -20,10 +30,21 @@ type ExpenseLogStatus = "PENDING_APPROVAL" | "APPROVED" | "PAID";
 type Yacht = { id: string; name: string };
 type User = { id: string; name: string };
 
-function formatCost(cost: number | string): string {
+function formatCostPlain(cost: number | string): string {
   const n = typeof cost === "string" ? parseFloat(cost) : cost;
   if (Number.isNaN(n)) return "0.00";
   return n.toFixed(2);
+}
+
+const usdFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+function formatUsd(n: number): string {
+  return usdFormatter.format(Number.isFinite(n) ? n : 0);
 }
 
 function getCostNum(log: { cost: number | string | unknown }): number {
@@ -200,6 +221,7 @@ export function ExpenseLogsView({
   }
 
   const effectiveYachtId = selectedYachtId ?? yachts[0]?.id ?? null;
+  const [showAddForm, setShowAddForm] = useState(false);
   const [showTotalsDropdown, setShowTotalsDropdown] = useState(false);
   const totalsRef = useRef<HTMLDivElement>(null);
 
@@ -214,6 +236,14 @@ export function ExpenseLogsView({
     }
     return getDateRangeForPeriod(period);
   }, [period, fromParam, toParam]);
+
+  const periodLabel = useMemo(() => {
+    if (period === "all") return "All time";
+    if (period === "custom" && range) {
+      return `${range.start.toLocaleDateString()} – ${range.end.toLocaleDateString()}`;
+    }
+    return PERIOD_OPTIONS.find((o) => o.value === period)?.label ?? period;
+  }, [period, range]);
 
   const filteredLogs = useMemo(() => {
     if (period === "custom") {
@@ -430,11 +460,11 @@ export function ExpenseLogsView({
                     </div>
                     <div className="flex justify-between gap-6">
                       <dt className="text-[var(--apple-text-secondary)]">Total Cost</dt>
-                      <dd className="tabular-nums font-medium text-[var(--apple-text-primary)]">${formatCost(totalCost)}</dd>
+                      <dd className="tabular-nums font-medium text-[var(--apple-text-primary)]">{formatUsd(totalCost)}</dd>
                     </div>
                     <div className="flex justify-between gap-6">
                       <dt className="text-[var(--apple-text-secondary)]">Total Pending Cost</dt>
-                      <dd className="tabular-nums font-medium text-[var(--apple-text-primary)]">${formatCost(pendingCost)}</dd>
+                      <dd className="tabular-nums font-medium text-[var(--apple-text-primary)]">{formatUsd(pendingCost)}</dd>
                     </div>
                   </dl>
                 </div>
@@ -442,6 +472,24 @@ export function ExpenseLogsView({
             </div>
           )}
         </div>
+
+        {effectiveYachtId ? (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--apple-radius)] border border-[var(--apple-border)] bg-[var(--apple-bg-elevated)] px-4 py-3 shadow-[var(--apple-shadow-sm)]">
+            <button
+              type="button"
+              onClick={() => setShowAddForm(true)}
+              className="inline-flex items-center gap-2 rounded-[var(--apple-radius)] bg-[var(--apple-accent)] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[var(--apple-accent-hover)]"
+            >
+              <PlusIcon className="h-4 w-4 shrink-0" aria-hidden />
+              + Add Expense
+            </button>
+            <ExpenseLogsPdfExportButton
+              yachtName={yachts.find((y) => y.id === effectiveYachtId)?.name ?? "Yacht"}
+              periodLabel={periodLabel}
+              logs={filteredLogs}
+            />
+          </div>
+        ) : null}
       </div>
 
       {error ? (
@@ -463,7 +511,7 @@ export function ExpenseLogsView({
                     <div
                       key={b.key}
                       className="flex min-w-0 flex-1 flex-col items-center justify-end gap-1"
-                      title={`${b.title}: $${formatCost(b.amount)}`}
+                      title={`${b.title}: ${formatUsd(b.amount)}`}
                     >
                       <div
                         className={`w-full max-w-[2rem] rounded-t-sm ${barColors[i % barColors.length]} opacity-90`}
@@ -474,7 +522,7 @@ export function ExpenseLogsView({
                 )}
               </div>
               <p className="mt-4 text-3xl font-bold tabular-nums tracking-tight text-[var(--apple-text-primary)]">
-                ${formatCost(totalCost)}
+                {formatUsd(totalCost)}
               </p>
               <p className="mt-1 text-xs text-[var(--apple-text-tertiary)]">
                 {totalLogs} line{totalLogs === 1 ? "" : "s"} · {pendingLogs} open
@@ -484,6 +532,8 @@ export function ExpenseLogsView({
           <div className="min-w-0 flex-1 overflow-auto">
             <ExpenseLogTable
               yachtId={effectiveYachtId}
+              showAddForm={showAddForm}
+              setShowAddForm={setShowAddForm}
               logs={filteredLogs}
               pending={pending}
               startTransition={startTransition}
@@ -642,6 +692,8 @@ function ExpenseLogAddRow({
 
 function ExpenseLogTable({
   yachtId,
+  showAddForm,
+  setShowAddForm,
   logs,
   pending,
   startTransition,
@@ -649,6 +701,8 @@ function ExpenseLogTable({
   canCreateTask,
 }: {
   yachtId: string;
+  showAddForm: boolean;
+  setShowAddForm: Dispatch<SetStateAction<boolean>>;
   logs: ExpenseLog[];
   pending: boolean;
   startTransition: (fn: () => void) => void;
@@ -664,10 +718,10 @@ function ExpenseLogTable({
     const res = await createExpenseLog(yachtId, formData);
     if (!res?.error) {
       setCreateTask(false);
+      setShowAddForm(false);
       setAddRowKey((k) => k + 1);
       startTransition(() => router.refresh());
       addFormRef.current?.reset();
-      // Keep add form open so user can add more entries
     } else {
       alert(res.error);
     }
@@ -748,6 +802,7 @@ function ExpenseLogTable({
                   <ExpenseLogAddRow
                     formId="expense-add-form"
                     onCancel={() => {
+                      setShowAddForm(false);
                       setCreateTask(false);
                       addFormRef.current?.reset();
                       setAddRowKey((k) => k + 1);
@@ -760,32 +815,37 @@ function ExpenseLogTable({
                   />
                 </Fragment>
               );
-              const monthRows = months.flatMap(([monthKey, monthLogs]) => [
-                <tr key={`h-${monthKey}`} className="border-b border-[var(--apple-border)] bg-[var(--apple-bg-subtle)]">
-                  <td colSpan={7} className="px-4 py-2 text-left text-sm font-semibold text-[var(--apple-text-primary)]">
-                    {formatMonthHeader(monthLogs[0].date)}
-                  </td>
-                </tr>,
-                ...monthLogs.map((log) => {
-                  rowIndex += 1;
-                  const isEven = rowIndex % 2 === 0;
-                  return (
-                    <ExpenseLogRow
-                      key={log.id}
-                      log={log}
-                      index={rowIndex}
-                      zebra={isEven}
-                      yachtId={yachtId}
-                      onEdit={handleEdit}
-                      onDelete={handleDelete}
-                      onStatusChange={handleStatusChange}
-                      canCreateTask={canCreateTask}
-                      users={users}
-                    />
-                  );
-                }),
-              ]);
-              return [newRow, ...monthRows];
+              const monthRows = months.flatMap(([monthKey, monthLogs]) => {
+                const sortedMonthLogs = [...monthLogs].sort(
+                  (a, b) => parseLogDate(a.date).getTime() - parseLogDate(b.date).getTime(),
+                );
+                return [
+                  <tr key={`h-${monthKey}`} className="border-b border-[var(--apple-border)] bg-[var(--apple-bg-subtle)]">
+                    <td colSpan={7} className="px-4 py-2 text-left text-sm font-semibold text-[var(--apple-text-primary)]">
+                      {formatMonthHeader(sortedMonthLogs[0]!.date)}
+                    </td>
+                  </tr>,
+                  ...sortedMonthLogs.map((log) => {
+                    rowIndex += 1;
+                    const isEven = rowIndex % 2 === 0;
+                    return (
+                      <ExpenseLogRow
+                        key={log.id}
+                        log={log}
+                        index={rowIndex}
+                        zebra={isEven}
+                        yachtId={yachtId}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                        onStatusChange={handleStatusChange}
+                        canCreateTask={canCreateTask}
+                        users={users}
+                      />
+                    );
+                  }),
+                ];
+              });
+              return [...(showAddForm ? [newRow] : []), ...monthRows];
             })()}
           </tbody>
         </table>
@@ -808,7 +868,7 @@ function ExpenseLogTable({
                   {logs.length} {logs.length === 1 ? "item" : "items"}
                 </td>
                 <td className="px-4 py-3.5 text-right tabular-nums text-[var(--apple-text-primary)]">
-                  ${formatCost(logs.reduce((sum, l) => sum + getCostNum(l), 0))}
+                  {formatUsd(logs.reduce((sum, l) => sum + getCostNum(l), 0))}
                 </td>
                 <td colSpan={4} />
               </tr>
@@ -817,9 +877,9 @@ function ExpenseLogTable({
         </div>
       </div>
 
-      {logs.length === 0 && !pending && (
+      {logs.length === 0 && !pending && !showAddForm && (
         <div className="p-6 text-center text-[var(--apple-text-tertiary)]">
-          No saved expense lines yet. Use the <strong className="text-[var(--apple-text-secondary)]">New expense</strong> row above to add one.
+          No saved expense lines yet. Use <strong className="text-[var(--apple-text-secondary)]">+ Add expense</strong> in the bar above (next to Export).
         </div>
       )}
     </div>
@@ -956,12 +1016,12 @@ function ExpenseLogRow({
               type="number"
               step="0.01"
               min="0"
-              defaultValue={formatCost(cost)}
+              defaultValue={formatCostPlain(cost)}
               className="logs-input no-spinner min-w-0 flex-1 text-right max-w-[6rem]"
             />
           </div>
         ) : (
-          <span className="tabular-nums text-[var(--apple-text-primary)]">${formatCost(cost)}</span>
+          <span className="tabular-nums text-[var(--apple-text-primary)]">{formatUsd(cost)}</span>
         )}
       </td>
       <td className="px-4 py-2 text-left align-middle overflow-hidden">

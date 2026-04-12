@@ -235,6 +235,8 @@ model LogEntry {
 model CalendarEvent {
   id              String    @id @default(cuid())
   title           String
+  /// Optional notes shown in Edit event.
+  description     String?
   startAt         DateTime
   endAt           DateTime?
   yachtId         String?

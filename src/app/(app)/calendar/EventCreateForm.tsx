@@ -76,7 +76,7 @@ export function EventCreateForm({
     fd.set("assignedUserId", assignedUserId);   // ✅ siempre (ojo con el nombre en tu action)
     fd.set("startAt", startAt.trim());
     fd.set("endAt", endAt.trim() || startAt.trim());
-    fd.set("notes", notes.trim());
+    fd.set("eventDescription", notes.trim());
 
     startTransition(async () => {
       const res = await createEvent(fd);
@@ -159,14 +159,14 @@ export function EventCreateForm({
       </div>
 
       <div className="grid gap-1">
-        <label className="text-sm text-[var(--apple-text-secondary)]">Notes (optional)</label>
+        <label className="text-sm text-[var(--apple-text-secondary)]">Comment / description (optional)</label>
         <textarea
-          name="notes"
+          name="eventDescription"
           rows={3}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           className="apple-input w-full px-3 py-2 text-sm"
-          placeholder="Extra details…"
+          placeholder="Context, agenda, or notes…"
         />
       </div>
 

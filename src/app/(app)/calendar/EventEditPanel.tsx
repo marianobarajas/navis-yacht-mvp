@@ -13,6 +13,7 @@ export type UserLite = { id: string; name: string };
 export type CalendarEventUI = {
   id: string;
   title: string;
+  description?: string | null;
   startAt: Date;
   endAt: Date | null;
   yachtId: string | null;
@@ -41,6 +42,7 @@ export function EventEditPanel({
     if (!event) return null;
     return {
       title: event.title ?? "",
+      description: event.description ?? "",
       yachtId: event.yachtId ?? "",
       assignedUserId: event.assignedUserId ?? "",
       startAt: toDateInputValue(event.startAt),
@@ -49,6 +51,7 @@ export function EventEditPanel({
   }, [event]);
 
   const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [yachtId, setYachtId] = useState("");
   const [assignedUserId, setAssignedUserId] = useState("");
   const [startAt, setStartAt] = useState("");
@@ -57,6 +60,7 @@ export function EventEditPanel({
   useEffect(() => {
     if (!initial) return;
     setTitle(initial.title);
+    setDescription(initial.description);
     setYachtId(initial.yachtId);
     setAssignedUserId(initial.assignedUserId);
     setStartAt(initial.startAt);
@@ -75,6 +79,7 @@ export function EventEditPanel({
 
     const fd = new FormData();
     fd.set("title", title);
+    fd.set("eventDescription", description);
     fd.set("yachtId", yachtId);
     fd.set("assignedUserId", assignedUserId);
     fd.set("startAt", startAt);
@@ -106,9 +111,9 @@ export function EventEditPanel({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm p-4 sm:items-center">
-      <div className="w-full max-w-lg rounded-[var(--apple-radius-xl)] border border-[var(--apple-border)] bg-[var(--apple-bg-elevated)] shadow-[var(--apple-shadow-xl)]">
-        <div className="flex items-center justify-between border-b border-[var(--apple-border)] px-5 py-4">
+    <div className="fixed inset-0 z-[200] flex items-end justify-center bg-black/40 backdrop-blur-sm p-4 sm:items-center">
+      <div className="flex max-h-[min(92dvh,44rem)] w-full max-w-lg flex-col overflow-hidden rounded-[var(--apple-radius-xl)] border border-[var(--apple-border)] bg-[var(--apple-bg-elevated)] shadow-[var(--apple-shadow-xl)]">
+        <div className="flex shrink-0 items-center justify-between border-b border-[var(--apple-border)] px-5 py-4">
           <div>
             <div className="text-base font-semibold text-[var(--apple-text-primary)]">Edit event</div>
             <div className="mt-0.5 text-sm text-[var(--apple-text-tertiary)]">Update details</div>
@@ -123,7 +128,7 @@ export function EventEditPanel({
           </button>
         </div>
 
-        <form onSubmit={onSubmit} className="grid gap-4 p-5">
+        <form onSubmit={onSubmit} className="grid min-h-0 flex-1 gap-4 overflow-y-auto overscroll-contain p-5">
           <div className="grid gap-2">
             <label className="text-sm font-medium text-[var(--apple-text-secondary)]">Title</label>
             <input
@@ -133,6 +138,20 @@ export function EventEditPanel({
               className="apple-input w-full px-4 py-2.5 text-sm"
             />
           </div>
+
+          <fieldset className="grid gap-2 rounded-[var(--apple-radius)] border border-[var(--apple-border)] bg-[var(--apple-bg-subtle)]/50 p-4">
+            <legend className="px-1 text-sm font-semibold text-[var(--apple-text-primary)]">
+              Comment / description
+            </legend>
+            <p className="text-xs text-[var(--apple-text-tertiary)]">Optional — visible when you edit this event.</p>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={4}
+              className="apple-input w-full resize-y px-4 py-2.5 text-sm"
+              placeholder="Context, agenda, or notes for this event…"
+            />
+          </fieldset>
 
           <div className="grid gap-2">
             <label className="text-sm font-medium text-[var(--apple-text-secondary)]">Yacht</label>

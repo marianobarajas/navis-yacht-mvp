@@ -32,6 +32,7 @@ export default async function CalendarPage({
       select: {
         id: true,
         title: true,
+        description: true,
         startAt: true,
         endAt: true,
         yachtId: true,

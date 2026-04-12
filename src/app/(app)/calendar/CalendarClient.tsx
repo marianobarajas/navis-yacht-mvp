@@ -7,6 +7,7 @@ import { EventEditPanel, type CalendarEventUI, type YachtLite, type UserLite } f
 type ServerEvent = {
   id: string;
   title: string;
+  description?: string | null;
   startAt: string | Date;
   endAt: string | Date | null;
   yachtId: string | null;
@@ -45,6 +46,7 @@ export function CalendarClient({
       return {
         id: ev.id,
         title: ev.title,
+        description: ev.description ?? null,
         startAt,
         endAt,
         yachtId: ev.yachtId ?? null,

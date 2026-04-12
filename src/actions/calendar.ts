@@ -33,6 +33,7 @@ export async function listEvents() {
     select: {
       id: true,
       title: true,
+      description: true,
       startAt: true,
       endAt: true,
       yachtId: true,
@@ -65,6 +66,7 @@ export async function createEvent(formData: FormData) {
   const createTask = formData.get("createTask") === "true" || formData.get("createTask") === "on";
   const priorityRaw = String(formData.get("priority") ?? "MEDIUM").trim();
   const description = String(formData.get("description") ?? "").trim();
+  const eventDescription = String(formData.get("eventDescription") ?? "").trim();
 
   if (!title || !startAtRaw) return { error: "Missing required fields" };
 
@@ -118,6 +120,7 @@ export async function createEvent(formData: FormData) {
     await prisma.calendarEvent.create({
       data: {
         title,
+        description: eventDescription || null,
         startAt,
         endAt: endAt ?? startAt,
         yachtId: yachtIdRaw || null,
@@ -156,6 +159,7 @@ export async function updateEvent(eventId: string, formData: FormData) {
   const assignedUserIdRaw = String(formData.get("assignedUserId") ?? "").trim();
   const startAtRaw = String(formData.get("startAt") ?? "").trim();
   const endAtRaw = String(formData.get("endAt") ?? "").trim();
+  const eventDescription = String(formData.get("eventDescription") ?? "").trim();
 
   if (!title || !startAtRaw) return { error: "Missing required fields" };
 
@@ -185,6 +189,7 @@ export async function updateEvent(eventId: string, formData: FormData) {
     where: { id: eventId },
     data: {
       title,
+      description: eventDescription || null,
       startAt,
       endAt: endAt,
       yachtId: yachtIdRaw || null,
