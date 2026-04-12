@@ -482,7 +482,7 @@ export function ExpenseLogsView({
               className="inline-flex items-center gap-2 rounded-[var(--apple-radius)] bg-[var(--apple-accent)] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[var(--apple-accent-hover)]"
             >
               <PlusIcon className="h-4 w-4 shrink-0" aria-hidden />
-              + Add Expense
+              Add expense
             </button>
             <ExpenseLogsPdfExportButton
               yachtName={yachts.find((y) => y.id === effectiveYachtId)?.name ?? "Yacht"}
@@ -885,7 +885,7 @@ function ExpenseLogTable({
 
       {logs.length === 0 && !pending && !showAddForm && (
         <div className="p-6 text-center text-[var(--apple-text-tertiary)]">
-          No saved expense lines yet. Use <strong className="text-[var(--apple-text-secondary)]">+ Add expense</strong> in the bar above (next to Export).
+          No saved expense lines yet. Use <strong className="text-[var(--apple-text-secondary)]">Add expense</strong> in the bar above (next to Export).
         </div>
       )}
     </div>
