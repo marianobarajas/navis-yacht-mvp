@@ -9,6 +9,7 @@ import { DashboardSprintPlanning } from "@/components/DashboardSprintPlanning";
 import { DashboardCalendarPreview } from "@/components/DashboardCalendarPreview";
 import { MyYachtsWidget } from "@/components/MyYachtsWidget";
 import { CrewCard } from "@/components/CrewCard";
+import { crewPositionSortIndex } from "@/lib/crew";
 
 /** Frosted glass panels + lift on hover (dashboard hero only) — ring + stronger icon wells for contrast on photo */
 const GLASS_PANEL =
@@ -117,15 +118,12 @@ async function DashboardContent() {
     })),
   }));
 
-  // Crew: sort by On Shift first, then by role (Admin > Manager > Technician)
-  const ROLE_ORDER = ["ADMIN", "MANAGER", "TECHNICIAN"];
+  // Crew: on duty / active first, then by yacht position (Captain → …)
   const crew = [...crewRaw].sort((a: any, b: any) => {
-    const aOnShift = a.shiftStatus === "ON_SHIFT" ? 1 : 0;
-    const bOnShift = b.shiftStatus === "ON_SHIFT" ? 1 : 0;
-    if (aOnShift !== bOnShift) return bOnShift - aOnShift; // On Shift first
-    const aRoleIdx = ROLE_ORDER.indexOf(a.role ?? "") >= 0 ? ROLE_ORDER.indexOf(a.role) : 99;
-    const bRoleIdx = ROLE_ORDER.indexOf(b.role ?? "") >= 0 ? ROLE_ORDER.indexOf(b.role) : 99;
-    return aRoleIdx - bRoleIdx; // Higher role first
+    const aWork = a.shiftStatus === "ON_DUTY" || a.shiftStatus === "ACTIVE" ? 1 : 0;
+    const bWork = b.shiftStatus === "ON_DUTY" || b.shiftStatus === "ACTIVE" ? 1 : 0;
+    if (aWork !== bWork) return bWork - aWork;
+    return crewPositionSortIndex(a.crewPosition) - crewPositionSortIndex(b.crewPosition);
   });
 
   return (

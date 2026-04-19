@@ -21,52 +21,80 @@ async function main() {
 
   const admin = await prisma.user.upsert({
     where: { email: "admin@oceanops.demo" },
-    update: { organizationId: org.id, isPlatformAdmin: false },
+    update: {
+      organizationId: org.id,
+      isPlatformAdmin: false,
+      crewPosition: "CAPTAIN",
+      shiftStatus: "OFF_DUTY",
+    },
     create: {
       organizationId: org.id,
       name: "Admin User",
       email: "admin@oceanops.demo",
       passwordHash: adminHash,
       role: "ADMIN",
+      crewPosition: "CAPTAIN",
+      shiftStatus: "OFF_DUTY",
       isPlatformAdmin: false,
     },
   });
 
   const manager = await prisma.user.upsert({
     where: { email: "manager@oceanops.demo" },
-    update: { organizationId: org.id, isPlatformAdmin: false },
+    update: {
+      organizationId: org.id,
+      isPlatformAdmin: false,
+      crewPosition: "CHIEF_ENGINEER",
+      shiftStatus: "OFF_DUTY",
+    },
     create: {
       organizationId: org.id,
       name: "Manager User",
       email: "manager@oceanops.demo",
       passwordHash: managerHash,
       role: "MANAGER",
+      crewPosition: "CHIEF_ENGINEER",
+      shiftStatus: "OFF_DUTY",
       isPlatformAdmin: false,
     },
   });
 
   const tech1 = await prisma.user.upsert({
     where: { email: "tech1@oceanops.demo" },
-    update: { organizationId: org.id, isPlatformAdmin: false },
+    update: {
+      organizationId: org.id,
+      isPlatformAdmin: false,
+      crewPosition: "DECKHAND_1_2",
+      shiftStatus: "ON_DUTY",
+    },
     create: {
       organizationId: org.id,
       name: "Tech One",
       email: "tech1@oceanops.demo",
       passwordHash: techHash,
       role: "TECHNICIAN",
+      crewPosition: "DECKHAND_1_2",
+      shiftStatus: "ON_DUTY",
       isPlatformAdmin: false,
     },
   });
 
   const tech2 = await prisma.user.upsert({
     where: { email: "tech2@oceanops.demo" },
-    update: { organizationId: org.id, isPlatformAdmin: false },
+    update: {
+      organizationId: org.id,
+      isPlatformAdmin: false,
+      crewPosition: "CHEF",
+      shiftStatus: "OFF_DUTY",
+    },
     create: {
       organizationId: org.id,
       name: "Tech Two",
       email: "tech2@oceanops.demo",
       passwordHash: techHash,
       role: "TECHNICIAN",
+      crewPosition: "CHEF",
+      shiftStatus: "OFF_DUTY",
       isPlatformAdmin: false,
     },
   });

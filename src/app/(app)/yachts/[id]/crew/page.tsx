@@ -5,43 +5,36 @@ import { getYachtById } from "@/actions/yachts";
 import { listCrew } from "@/actions/users";
 import { AddCrewPanel } from "./AddCrewPanel";
 import { RemoveCrewButton } from "./RemoveCrewButton";
-import { RoleBadge } from "@/components/ui/Badge";
+import { CrewPositionBadge } from "@/components/ui/Badge";
+import type { CrewPosition } from "@prisma/client";
+import { CREW_POSITION_LABELS, CREW_POSITION_ORDER, crewPositionSortIndex } from "@/lib/crew";
 
-const ROLE_ORDER = ["ADMIN", "MANAGER", "TECHNICIAN"] as const;
-const ROLE_LABELS: Record<string, string> = {
-  ADMIN: "Admins",
-  MANAGER: "Managers",
-  TECHNICIAN: "Technicians",
+type Assignment = {
+  id: string;
+  user: { id: string; name: string; email: string; crewPosition: CrewPosition };
 };
 
-type Assignment = { id: string; user: { id: string; name: string; email: string; role?: string } };
-
-function sortAssignmentsByRole(assignments: Assignment[]): Assignment[] {
+function sortAssignmentsByPosition(assignments: Assignment[]): Assignment[] {
   return [...assignments].sort((a, b) => {
-    const roleA = a.user.role ?? "TECHNICIAN";
-    const roleB = b.user.role ?? "TECHNICIAN";
-    const idxA = ROLE_ORDER.indexOf(roleA as (typeof ROLE_ORDER)[number]);
-    const idxB = ROLE_ORDER.indexOf(roleB as (typeof ROLE_ORDER)[number]);
-    const orderA = idxA >= 0 ? idxA : ROLE_ORDER.length;
-    const orderB = idxB >= 0 ? idxB : ROLE_ORDER.length;
-    return orderA - orderB;
+    const pa = a.user.crewPosition ?? "DECKHAND_1_2";
+    const pb = b.user.crewPosition ?? "DECKHAND_1_2";
+    return crewPositionSortIndex(pa) - crewPositionSortIndex(pb);
   });
 }
 
-function groupAssignmentsByRole(assignments: Assignment[]): { role: string; label: string; items: Assignment[] }[] {
-  const sorted = sortAssignmentsByRole(assignments);
-  const groups: { role: string; label: string; items: Assignment[] }[] = [];
-  for (const r of ROLE_ORDER) {
-    const items = sorted.filter((a) => (a.user.role ?? "TECHNICIAN") === r);
+function groupAssignmentsByPosition(assignments: Assignment[]): { key: string; label: string; items: Assignment[] }[] {
+  const sorted = sortAssignmentsByPosition(assignments);
+  const groups: { key: string; label: string; items: Assignment[] }[] = [];
+  for (const pos of CREW_POSITION_ORDER) {
+    const items = sorted.filter((a) => (a.user.crewPosition ?? "DECKHAND_1_2") === pos);
     if (items.length > 0) {
-      groups.push({ role: r, label: ROLE_LABELS[r] ?? r, items });
+      groups.push({ key: pos, label: CREW_POSITION_LABELS[pos], items });
     }
   }
-  // Include any role not in ROLE_ORDER
   const seen = new Set(groups.flatMap((g) => g.items));
   const rest = sorted.filter((a) => !seen.has(a));
   if (rest.length > 0) {
-    groups.push({ role: "OTHER", label: "Other", items: rest });
+    groups.push({ key: "OTHER", label: "Other", items: rest });
   }
   return groups;
 }
@@ -66,7 +59,7 @@ export default async function YachtCrewPage({
 
   const assignments = yacht.assignments as Assignment[];
   const assignedUserIds = assignments.map((a) => a.user.id);
-  const grouped = groupAssignmentsByRole(assignments);
+  const grouped = groupAssignmentsByPosition(assignments);
 
   return (
     <div className="space-y-8">
@@ -81,8 +74,8 @@ export default async function YachtCrewPage({
       ) : (
         <div className="space-y-8">
           {grouped.map((group) => (
-            <section key={group.role}>
-              <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-[var(--apple-text-tertiary)]">
+            <section key={group.key}>
+              <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-[var(--apple-text-secondary)]">
                 {group.label}
               </h3>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -92,17 +85,15 @@ export default async function YachtCrewPage({
                     className="flex items-center justify-between gap-4 rounded-xl border border-[var(--apple-border)] bg-[var(--apple-bg-elevated)] p-4 shadow-sm transition-shadow hover:shadow-md"
                   >
                     <div className="flex min-w-0 flex-1 items-center gap-4">
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--apple-accent-muted)] text-base font-semibold text-[var(--apple-accent)]">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-white/20 bg-[var(--apple-accent-muted)] text-base font-semibold text-[var(--apple-accent)] shadow-sm">
                         {a.user.name.charAt(0)}
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="truncate font-medium text-[var(--apple-text-primary)]">{a.user.name}</p>
-                        <p className="truncate text-sm text-[var(--apple-text-tertiary)]">{a.user.email}</p>
-                        {a.user.role && (
-                          <div className="mt-2">
-                            <RoleBadge role={a.user.role} />
-                          </div>
-                        )}
+                        <p className="truncate text-sm text-[var(--apple-text-secondary)]">{a.user.email}</p>
+                        <div className="mt-2">
+                          <CrewPositionBadge position={a.user.crewPosition} />
+                        </div>
                       </div>
                     </div>
                     {canAssign && (

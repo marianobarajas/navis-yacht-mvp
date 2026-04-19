@@ -5,12 +5,14 @@ import { useRouter } from "next/navigation";
 import { updateUser } from "@/actions/users";
 import { CheckIcon, XIcon } from "@/components/ui/Icons";
 import { CustomSelect } from "@/components/ui/CustomSelect";
+import { CREW_POSITION_SELECT_OPTIONS, SHIFT_STATUS_SELECT_OPTIONS } from "@/lib/crew";
 
 type UserForEdit = {
   id: string;
   name: string;
   email: string;
   role: string;
+  crewPosition?: string;
   shiftStatus?: string;
   isActive: boolean;
 };
@@ -60,12 +62,28 @@ export function UserEditForm({ user, actorRole, onClose, compact }: { user: User
             <input name="email" type="email" required defaultValue={user.email} className={inputClass} placeholder="email@example.com" />
           </div>
           <div className="grid gap-0.5">
-            <label className={`${labelClass} font-semibold text-[var(--apple-text-primary)]`}>Role</label>
+            <label className={`${labelClass} font-semibold text-[var(--apple-text-primary)]`}>App role</label>
             <CustomSelect name="role" defaultValue={user.role} options={roleOptions} triggerClassName={roleShiftStatusClass} emphasizeValue />
           </div>
           <div className="grid gap-0.5">
-            <label className={`${labelClass} font-semibold text-[var(--apple-text-primary)]`}>Shift status</label>
-            <CustomSelect name="shiftStatus" defaultValue={user.shiftStatus ?? "OFF_DUTY"} options={[{ value: "OFF_DUTY", label: "Off duty" }, { value: "ON_SHIFT", label: "On shift" }, { value: "UNAVAILABLE", label: "Unavailable" }]} triggerClassName={roleShiftStatusClass} emphasizeValue />
+            <label className={`${labelClass} font-semibold text-[var(--apple-text-primary)]`}>Position</label>
+            <CustomSelect
+              name="crewPosition"
+              defaultValue={user.crewPosition ?? "DECKHAND_1_2"}
+              options={CREW_POSITION_SELECT_OPTIONS}
+              triggerClassName={roleShiftStatusClass}
+              emphasizeValue
+            />
+          </div>
+          <div className="grid gap-0.5">
+            <label className={`${labelClass} font-semibold text-[var(--apple-text-primary)]`}>Crew status</label>
+            <CustomSelect
+              name="shiftStatus"
+              defaultValue={user.shiftStatus ?? "OFF_DUTY"}
+              options={SHIFT_STATUS_SELECT_OPTIONS}
+              triggerClassName={roleShiftStatusClass}
+              emphasizeValue
+            />
           </div>
           {error ? <div className="col-span-2 rounded-[var(--apple-radius-sm)] bg-red-50 px-2 py-1.5 text-xs text-red-600">{error}</div> : null}
           <div className="grid gap-0.5">
@@ -84,12 +102,28 @@ export function UserEditForm({ user, actorRole, onClose, compact }: { user: User
             <input name="email" type="email" required defaultValue={user.email} className={inputClass} placeholder="email@example.com" />
           </div>
           <div className="grid gap-1">
-            <label className={`${labelClass} font-semibold text-[var(--apple-text-primary)]`}>Role</label>
+            <label className={`${labelClass} font-semibold text-[var(--apple-text-primary)]`}>App role</label>
             <CustomSelect name="role" defaultValue={user.role} options={roleOptions} triggerClassName={roleShiftStatusClass} emphasizeValue />
           </div>
           <div className="grid gap-1">
-            <label className={`${labelClass} font-semibold text-[var(--apple-text-primary)]`}>Shift status</label>
-            <CustomSelect name="shiftStatus" defaultValue={user.shiftStatus ?? "OFF_DUTY"} options={[{ value: "OFF_DUTY", label: "Off duty" }, { value: "ON_SHIFT", label: "On shift" }, { value: "UNAVAILABLE", label: "Unavailable" }]} triggerClassName={roleShiftStatusClass} emphasizeValue />
+            <label className={`${labelClass} font-semibold text-[var(--apple-text-primary)]`}>Position</label>
+            <CustomSelect
+              name="crewPosition"
+              defaultValue={user.crewPosition ?? "DECKHAND_1_2"}
+              options={CREW_POSITION_SELECT_OPTIONS}
+              triggerClassName={roleShiftStatusClass}
+              emphasizeValue
+            />
+          </div>
+          <div className="grid gap-1">
+            <label className={`${labelClass} font-semibold text-[var(--apple-text-primary)]`}>Crew status</label>
+            <CustomSelect
+              name="shiftStatus"
+              defaultValue={user.shiftStatus ?? "OFF_DUTY"}
+              options={SHIFT_STATUS_SELECT_OPTIONS}
+              triggerClassName={roleShiftStatusClass}
+              emphasizeValue
+            />
           </div>
           <div className="grid gap-1">
             <label className={`${labelClass} font-semibold text-[var(--apple-text-primary)]`}>Active</label>

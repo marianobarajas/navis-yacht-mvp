@@ -12,6 +12,8 @@ import {
 } from "@/actions/notifications";
 import { CheckIcon } from "@/components/ui/Icons";
 import { CustomSelect } from "@/components/ui/CustomSelect";
+import { CREW_POSITION_LABELS, SHIFT_STATUS_SELECT_OPTIONS } from "@/lib/crew";
+import type { CrewPosition } from "@prisma/client";
 
 const ALL_PERMISSIONS: { id: string; label: string }[] = [
   { id: "all_permissions", label: "All permissions" },
@@ -43,6 +45,7 @@ export type Profile = {
   name: string;
   email: string;
   role: string;
+  crewPosition: CrewPosition;
   isActive: boolean;
   shiftStatus: string | null;
   permissionOverrides: Record<string, boolean> | null;
@@ -111,11 +114,7 @@ export function ProfileView({ profile }: { profile: Profile }) {
     });
   }
 
-  const shiftOptions = [
-    { value: "OFF_DUTY", label: "Off duty" },
-    { value: "ON_SHIFT", label: "On shift" },
-    { value: "UNAVAILABLE", label: "Unavailable" },
-  ];
+  const shiftOptions = SHIFT_STATUS_SELECT_OPTIONS;
 
   async function handleProfilePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -257,13 +256,19 @@ export function ProfileView({ profile }: { profile: Profile }) {
             </p>
           </div>
           <div className="grid gap-1">
-            <label className="text-xs font-medium text-[var(--apple-text-secondary)]">Role</label>
+            <label className="text-xs font-medium text-[var(--apple-text-secondary)]">App access</label>
             <p className="rounded-lg border border-[var(--apple-border)] bg-[var(--apple-bg-subtle)] px-3 py-2 text-xs font-medium text-[var(--apple-text-primary)]">
               {profile.role}
             </p>
           </div>
           <div className="col-span-2 grid gap-1">
-            <label className="text-xs font-medium text-[var(--apple-text-secondary)]">Shift status</label>
+            <label className="text-xs font-medium text-[var(--apple-text-secondary)]">Position</label>
+            <p className="rounded-lg border border-[var(--apple-border)] bg-[var(--apple-bg-subtle)] px-3 py-2 text-xs font-medium text-[var(--apple-text-primary)]">
+              {CREW_POSITION_LABELS[profile.crewPosition]}
+            </p>
+          </div>
+          <div className="col-span-2 grid gap-1">
+            <label className="text-xs font-medium text-[var(--apple-text-secondary)]">Crew status</label>
             <CustomSelect
               name="shiftStatus"
               value={shiftStatus}

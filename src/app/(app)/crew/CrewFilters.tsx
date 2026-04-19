@@ -2,11 +2,12 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { CustomSelect } from "@/components/ui/CustomSelect";
+import { CREW_POSITION_SELECT_OPTIONS, SHIFT_STATUS_SELECT_OPTIONS } from "@/lib/crew";
 
 export function CrewFilters() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const role = searchParams.get("role") ?? "";
+  const position = searchParams.get("position") ?? "";
   const status = searchParams.get("status") ?? "";
 
   function updateFilter(key: string, value: string) {
@@ -19,28 +20,18 @@ export function CrewFilters() {
   return (
     <div className="mt-4 flex flex-wrap gap-3">
       <CustomSelect
-        value={role}
-        onChange={(v) => updateFilter("role", v)}
-        placeholder="All roles"
-        className="min-w-[140px]"
-        options={[
-          { value: "", label: "All roles" },
-          { value: "ADMIN", label: "Admin" },
-          { value: "MANAGER", label: "Member" },
-          { value: "TECHNICIAN", label: "Technician" },
-        ]}
+        value={position}
+        onChange={(v) => updateFilter("position", v)}
+        placeholder="All positions"
+        className="min-w-[160px]"
+        options={[{ value: "", label: "All positions" }, ...CREW_POSITION_SELECT_OPTIONS]}
       />
       <CustomSelect
         value={status}
         onChange={(v) => updateFilter("status", v)}
-        placeholder="All status"
-        className="min-w-[140px]"
-        options={[
-          { value: "", label: "All status" },
-          { value: "ON_SHIFT", label: "On Shift" },
-          { value: "OFF_DUTY", label: "Off Duty" },
-          { value: "UNAVAILABLE", label: "Unavailable" },
-        ]}
+        placeholder="All statuses"
+        className="min-w-[160px]"
+        options={[{ value: "", label: "All statuses" }, ...SHIFT_STATUS_SELECT_OPTIONS]}
       />
     </div>
   );

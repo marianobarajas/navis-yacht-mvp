@@ -11,13 +11,13 @@ import { CrewMembersTable, type CrewTableRow } from "./CrewMembersTable";
 export default async function CrewPage({
   searchParams,
 }: {
-  searchParams: Promise<{ role?: string; status?: string }>;
+  searchParams: Promise<{ position?: string; status?: string }>;
 }) {
   const session = await getServerSession(authOptions);
   if (!session?.user) throw new Error("Unauthorized");
 
   const params = await searchParams;
-  const role = params.role ?? undefined;
+  const position = params.position ?? undefined;
   const status = params.status ?? undefined;
 
   const sessionRole = (session.user as { role?: Role }).role ?? "TECHNICIAN";
@@ -26,8 +26,8 @@ export default async function CrewPage({
 
   const [crewRes, yachtsRes] = await Promise.all([
     listCrew(
-      role || status
-        ? { role: role ?? undefined, shiftStatus: status ?? undefined }
+      position || status
+        ? { crewPosition: position ?? undefined, shiftStatus: status ?? undefined }
         : undefined
     ),
     listYachts(),
@@ -48,6 +48,7 @@ export default async function CrewPage({
     name: c.name,
     email: c.email,
     role: c.role,
+    crewPosition: c.crewPosition,
     shiftStatus: c.shiftStatus,
     isActive: c.isActive,
     profileImage: c.profileImage ?? null,

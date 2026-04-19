@@ -38,7 +38,7 @@ export async function getDashboardStats() {
       },
     }),
     prisma.user.count({
-      where: { isActive: true, shiftStatus: "ON_SHIFT", organizationId },
+      where: { isActive: true, shiftStatus: "ON_DUTY", organizationId },
     }),
     prisma.workOrder.count({
       where: {

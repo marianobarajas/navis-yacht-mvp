@@ -7,7 +7,8 @@ import { prisma } from "@/lib/db";
 import { hash, compare } from "bcryptjs";
 import { canAssignYacht, canCreateUser } from "@/lib/rbac";
 import { sendInviteEmail } from "@/lib/mail";
-import type { Role, ShiftStatus } from "@prisma/client";
+import type { CrewPosition, Role, ShiftStatus } from "@prisma/client";
+import { CREW_POSITION_ORDER, SHIFT_STATUS_ORDER } from "@/lib/crew";
 import { revalidatePath } from "next/cache";
 import { requireOrganizationId } from "@/lib/organization";
 
@@ -33,6 +34,7 @@ export async function listUsers() {
       name: true,
       email: true,
       role: true,
+      crewPosition: true,
       isActive: true,
       shiftStatus: true,
       createdAt: true,
@@ -43,7 +45,7 @@ export async function listUsers() {
 }
 
 export async function listCrew(filters?: {
-  role?: string;
+  crewPosition?: string;
   shiftStatus?: string;
   includeInactive?: boolean;
 }) {
@@ -56,14 +58,14 @@ export async function listCrew(filters?: {
   const where: {
     organizationId: string;
     isActive?: boolean;
-    role?: Role;
+    crewPosition?: CrewPosition;
     shiftStatus?: ShiftStatus;
   } = { organizationId };
 
   // Por default: solo activos
   if (!filters?.includeInactive) where.isActive = true;
 
-  if (filters?.role) where.role = filters.role as Role;
+  if (filters?.crewPosition) where.crewPosition = filters.crewPosition as CrewPosition;
   if (filters?.shiftStatus) where.shiftStatus = filters.shiftStatus as ShiftStatus;
 
   const users = await prisma.user.findMany({
@@ -74,6 +76,7 @@ export async function listCrew(filters?: {
       name: true,
       email: true,
       role: true,
+      crewPosition: true,
       shiftStatus: true,
       isActive: true, // ✅ NECESARIO si vas a editar/mostrar activo/inactivo
       profileImage: true,
@@ -106,6 +109,7 @@ export async function getUserWithAssignments(userId: string) {
       name: true,
       email: true,
       role: true,
+      crewPosition: true,
       isActive: true,
       shiftStatus: true,
       permissionOverrides: true,
@@ -134,6 +138,7 @@ export async function getCurrentUserProfile() {
       name: true,
       email: true,
       role: true,
+      crewPosition: true,
       isActive: true,
       shiftStatus: true,
       permissionOverrides: true,
@@ -161,8 +166,8 @@ export async function updateCurrentUser(formData: FormData) {
 
   if (!name) return { error: "Name is required" };
 
-  const allowedShift = ["ON_SHIFT", "OFF_DUTY", "UNAVAILABLE"];
-  if (shiftStatus && !allowedShift.includes(shiftStatus)) return { error: "Invalid shift status" };
+  const allowedShift = [...SHIFT_STATUS_ORDER];
+  if (shiftStatus && !allowedShift.includes(shiftStatus as ShiftStatus)) return { error: "Invalid shift status" };
 
   await prisma.user.update({
     where: { id: session.user.id },
@@ -234,12 +239,18 @@ export async function createUser(formData: FormData) {
   const passwordHash = await hash(password, 10);
   const initialYachtId = String(formData.get("initialYachtId") ?? "").trim();
 
+  const crewPositionRaw = String(formData.get("crewPosition") ?? "").trim();
+  const crewPosition = CREW_POSITION_ORDER.includes(crewPositionRaw as CrewPosition)
+    ? (crewPositionRaw as CrewPosition)
+    : ("DECKHAND_1_2" as CrewPosition);
+
   const created = await prisma.user.create({
     data: {
       name,
       email,
       passwordHash,
       role,
+      crewPosition,
       organizationId,
       isPlatformAdmin: false,
     },
@@ -416,7 +427,8 @@ export async function updateUser(userId: string, formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const roleInput = String(formData.get("role") ?? "").trim() as Role;
-  const shiftStatus = String(formData.get("shiftStatus") ?? "").trim() as any;
+  const shiftStatusRaw = String(formData.get("shiftStatus") ?? "").trim();
+  const crewPositionRaw = String(formData.get("crewPosition") ?? "").trim();
   const isActiveRaw = String(formData.get("isActive") ?? "true").trim();
 
   if (!name || !email) return { error: "Name and email are required" };
@@ -427,8 +439,14 @@ export async function updateUser(userId: string, formData: FormData) {
 
   if (!allowedRoles.includes(roleInput)) return { error: "Invalid role" };
 
-  const allowedShift = ["ON_SHIFT", "OFF_DUTY", "UNAVAILABLE"];
-  if (shiftStatus && !allowedShift.includes(shiftStatus)) return { error: "Invalid shift status" };
+  const allowedShift = [...SHIFT_STATUS_ORDER];
+  if (!shiftStatusRaw || !allowedShift.includes(shiftStatusRaw as ShiftStatus)) return { error: "Invalid shift status" };
+  const shiftStatus = shiftStatusRaw as ShiftStatus;
+
+  if (!crewPositionRaw || !CREW_POSITION_ORDER.includes(crewPositionRaw as CrewPosition)) {
+    return { error: "Invalid crew position" };
+  }
+  const crewPosition = crewPositionRaw as CrewPosition;
 
   const target = await prisma.user.findFirst({
     where: { id: userId, organizationId },
@@ -457,6 +475,7 @@ export async function updateUser(userId: string, formData: FormData) {
       role: roleInput,
       shiftStatus,
       isActive,
+      crewPosition,
     },
   });
 
@@ -568,12 +587,18 @@ export async function sendUserInvite(formData: FormData) {
   const inviteToken = randomBytes(32).toString("hex");
   const placeholderPassword = await hash(randomBytes(32).toString("hex"), 10);
 
+  const crewPositionRaw = String(formData.get("crewPosition") ?? "").trim();
+  const crewPosition = CREW_POSITION_ORDER.includes(crewPositionRaw as CrewPosition)
+    ? (crewPositionRaw as CrewPosition)
+    : ("DECKHAND_1_2" as CrewPosition);
+
   const created = await prisma.user.create({
     data: {
       name,
       email,
       passwordHash: placeholderPassword,
       role,
+      crewPosition,
       organizationId,
       isPlatformAdmin: false,
       inviteToken,

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createUser, sendUserInvite } from "@/actions/users";
 import { CustomSelect } from "@/components/ui/CustomSelect";
 import { ChevronDownIcon, UserPlusIcon } from "@/components/ui/Icons";
+import { CREW_POSITION_SELECT_OPTIONS } from "@/lib/crew";
 
 type YachtOption = { id: string; name: string };
 
@@ -158,11 +159,20 @@ export function CrewAddMemberCard({
               />
             </div>
             <div className="grid gap-1">
-              <label className="text-xs font-medium text-[var(--apple-text-secondary)]">Role</label>
+              <label className="text-xs font-medium text-[var(--apple-text-secondary)]">App access</label>
               <CustomSelect
                 name="role"
                 defaultValue="TECHNICIAN"
                 options={roleOptions}
+                triggerClassName="bg-[var(--apple-bg-elevated)] !h-10 !py-0 text-sm"
+              />
+            </div>
+            <div className="grid gap-1 sm:col-span-2">
+              <label className="text-xs font-medium text-[var(--apple-text-secondary)]">Position</label>
+              <CustomSelect
+                name="crewPosition"
+                defaultValue="DECKHAND_1_2"
+                options={CREW_POSITION_SELECT_OPTIONS}
                 triggerClassName="bg-[var(--apple-bg-elevated)] !h-10 !py-0 text-sm"
               />
             </div>

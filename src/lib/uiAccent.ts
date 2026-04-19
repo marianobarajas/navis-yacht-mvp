@@ -46,6 +46,30 @@ export function roleBorderLeftClass(role: string): string {
   }
 }
 
+/** Left accent on crew cards by yacht job title */
+export function crewPositionBorderLeftClass(position: string): string {
+  switch (position) {
+    case "CAPTAIN":
+      return "border-l-amber-400";
+    case "CHIEF_ENGINEER":
+      return "border-l-sky-400";
+    case "FIRST_MATE":
+      return "border-l-teal-400";
+    case "BOSUN":
+      return "border-l-cyan-400";
+    case "DECKHAND_1_2":
+      return "border-l-emerald-400";
+    case "CHEF":
+      return "border-l-orange-400";
+    case "CHIEF_STEWARDESS":
+      return "border-l-violet-400";
+    case "STEWARDESS_1_2":
+      return "border-l-fuchsia-400";
+    default:
+      return "border-l-[var(--apple-border-strong)]";
+  }
+}
+
 /** For grids/lists: rotate accent families so neighbors differ */
 const ACCENT_STRIP_ROTATE = [
   "border-l-[var(--palette-muted-teal)]",

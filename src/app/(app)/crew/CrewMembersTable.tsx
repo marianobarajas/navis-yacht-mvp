@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import type { CrewPosition, Role, ShiftStatus } from "@prisma/client";
 import { CustomSelect } from "@/components/ui/CustomSelect";
+import { CrewPositionBadge, ShiftBadge } from "@/components/ui/Badge";
 import {
   EllipsisHorizontalIcon,
   MagnifyingGlassIcon,
@@ -11,15 +13,14 @@ import {
 } from "@/components/ui/Icons";
 import { CrewEditModal, type CrewEditUserLite } from "./CrewEditButton";
 import { deactivateUser } from "@/actions/users";
-
-type Role = "ADMIN" | "MANAGER" | "TECHNICIAN";
-type ShiftStatus = "ON_SHIFT" | "OFF_DUTY" | "UNAVAILABLE";
+import { CREW_POSITION_SELECT_OPTIONS, SHIFT_STATUS_SELECT_OPTIONS } from "@/lib/crew";
 
 export type CrewTableRow = {
   id: string;
   name: string;
   email: string;
   role: Role;
+  crewPosition: CrewPosition;
   shiftStatus: ShiftStatus;
   isActive: boolean;
   profileImage: string | null;
@@ -32,31 +33,6 @@ function hueFromString(s: string) {
   let h = 0;
   for (let i = 0; i < s.length; i++) h = s.charCodeAt(i) + ((h << 5) - h);
   return Math.abs(h) % 360;
-}
-
-function CrewRolePill({ role }: { role: Role }) {
-  const map = {
-    TECHNICIAN: {
-      label: "Crew",
-      className: "bg-emerald-100 text-emerald-800 border-emerald-200/80",
-    },
-    MANAGER: {
-      label: "Member",
-      className: "bg-violet-100 text-violet-900 border-violet-200/80",
-    },
-    ADMIN: {
-      label: "Admin",
-      className: "bg-[var(--palette-charcoal)] text-white border-transparent",
-    },
-  } as const;
-  const m = map[role];
-  return (
-    <span
-      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${m.className}`}
-    >
-      {m.label}
-    </span>
-  );
 }
 
 function CrewRowActions({
@@ -87,6 +63,7 @@ function CrewRowActions({
     name: user.name,
     email: user.email,
     role: user.role,
+    crewPosition: user.crewPosition,
     shiftStatus: user.shiftStatus,
     isActive: user.isActive,
   };
@@ -165,7 +142,7 @@ function Avatar({ name, src }: { name: string; src: string | null }) {
   }
   return (
     <div
-      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white"
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white shadow-sm ring-1 ring-black/10"
       style={{ backgroundColor: `hsl(${hue} 42% 42%)` }}
     >
       {initial}
@@ -188,7 +165,7 @@ export function CrewMembersTable({
   const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
 
-  const role = searchParams.get("role") ?? "";
+  const position = searchParams.get("position") ?? "";
   const status = searchParams.get("status") ?? "";
   const yachtId = searchParams.get("yachtId") ?? "";
 
@@ -224,17 +201,22 @@ export function CrewMembersTable({
     ...yachts.map((y) => ({ value: y.id, label: y.name })),
   ];
 
+  const positionFilterOptions = [
+    { value: "", label: "All positions" },
+    ...CREW_POSITION_SELECT_OPTIONS,
+  ];
+
   return (
     <div className="mt-8">
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-[var(--apple-text-secondary)]">
-          <span className="font-medium text-[var(--apple-text-primary)]">{crew.length}</span> crew
+        <p className="text-sm font-medium text-[var(--apple-text-secondary)]">
+          <span className="font-semibold text-[var(--apple-text-primary)]">{crew.length}</span> crew
           members
           {summaryYachtName != null && assignedCount != null ? (
             <>
               {" "}
               ·{" "}
-              <span className="font-medium text-[var(--apple-text-primary)]">{assignedCount}</span>{" "}
+              <span className="font-semibold text-[var(--apple-text-primary)]">{assignedCount}</span>{" "}
               assigned to {summaryYachtName}
             </>
           ) : null}
@@ -251,16 +233,11 @@ export function CrewMembersTable({
             />
           </div>
           <CustomSelect
-            value={role}
-            onChange={(v) => setParam("role", v)}
-            placeholder="Filter by role"
-            className="min-w-[150px]"
-            options={[
-              { value: "", label: "All roles" },
-              { value: "ADMIN", label: "Admin" },
-              { value: "MANAGER", label: "Member" },
-              { value: "TECHNICIAN", label: "Crew" },
-            ]}
+            value={position}
+            onChange={(v) => setParam("position", v)}
+            placeholder="Filter by position"
+            className="min-w-[170px]"
+            options={positionFilterOptions}
           />
           <CustomSelect
             value={yachtId}
@@ -272,14 +249,9 @@ export function CrewMembersTable({
           <CustomSelect
             value={status}
             onChange={(v) => setParam("status", v)}
-            placeholder="Shift"
-            className="min-w-[140px]"
-            options={[
-              { value: "", label: "All shifts" },
-              { value: "ON_SHIFT", label: "On shift" },
-              { value: "OFF_DUTY", label: "Off duty" },
-              { value: "UNAVAILABLE", label: "Unavailable" },
-            ]}
+            placeholder="Crew status"
+            className="min-w-[160px]"
+            options={[{ value: "", label: "All statuses" }, ...SHIFT_STATUS_SELECT_OPTIONS]}
           />
         </div>
       </div>
@@ -290,9 +262,9 @@ export function CrewMembersTable({
             <tr className="border-b border-[var(--apple-border)] bg-[var(--apple-bg-subtle)]/80">
               <th className="px-4 py-3 font-semibold text-[var(--apple-text-secondary)]">Name</th>
               <th className="px-4 py-3 font-semibold text-[var(--apple-text-secondary)]">Email</th>
-              <th className="px-4 py-3 font-semibold text-[var(--apple-text-secondary)]">Role</th>
-              <th className="px-4 py-3 font-semibold text-[var(--apple-text-secondary)]">Status</th>
-              <th className="px-4 py-3 font-semibold text-[var(--apple-text-secondary)]">Status</th>
+              <th className="px-4 py-3 font-semibold text-[var(--apple-text-secondary)]">Position</th>
+              <th className="px-4 py-3 font-semibold text-[var(--apple-text-secondary)]">Account</th>
+              <th className="px-4 py-3 font-semibold text-[var(--apple-text-secondary)]">Crew status</th>
               <th className="px-4 py-3 pr-6 text-right font-semibold text-[var(--apple-text-secondary)]">
                 Actions
               </th>
@@ -319,31 +291,20 @@ export function CrewMembersTable({
                   </td>
                   <td className="px-4 py-3 text-[var(--apple-text-secondary)]">{row.email}</td>
                   <td className="px-4 py-3">
-                    <CrewRolePill role={row.role} />
+                    <CrewPositionBadge position={row.crewPosition} />
                   </td>
                   <td className="px-4 py-3">
                     {row.isActive ? (
-                      <span className="inline-flex items-center gap-1.5 text-emerald-700">
-                        <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                      <span className="inline-flex items-center gap-1.5 font-medium text-emerald-800 dark:text-emerald-200">
+                        <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-sm ring-1 ring-emerald-700/30" />
                         Active
                       </span>
                     ) : (
-                      <span className="text-[var(--apple-text-tertiary)]">Inactive</span>
+                      <span className="font-medium text-[var(--apple-text-tertiary)]">Inactive</span>
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    {row.isActive ? (
-                      <span className="inline-flex items-center gap-1.5 text-emerald-700">
-                        <span className="flex h-5 w-5 items-center justify-center rounded-full border border-emerald-500 bg-emerald-50">
-                          <svg className="h-3 w-3 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                          </svg>
-                        </span>
-                        Active
-                      </span>
-                    ) : (
-                      <span className="text-[var(--apple-text-tertiary)]">Inactive</span>
-                    )}
+                    <ShiftBadge status={row.shiftStatus} />
                   </td>
                   <td className="px-4 py-3 text-right">
                     <CrewRowActions user={row} canManage={canManage} actorRole={actorRole} />

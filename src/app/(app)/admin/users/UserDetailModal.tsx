@@ -15,6 +15,7 @@ import { XIcon, PlusIcon } from "@/components/ui/Icons";
 import { CustomSelect } from "@/components/ui/CustomSelect";
 import Link from "next/link";
 import { canAssignYacht } from "@/lib/rbac";
+import { CREW_POSITION_LABELS, SHIFT_STATUS_LABELS } from "@/lib/crew";
 
 const ALL_PERMISSIONS: { id: string; label: string }[] = [
   { id: "all_permissions", label: "All permissions" },
@@ -58,6 +59,7 @@ export function UserDetailModal({
     name: string;
     email: string;
     role: string;
+    crewPosition?: string;
     isActive: boolean;
     shiftStatus?: string;
     permissionOverrides?: Record<string, boolean> | null;
@@ -236,6 +238,7 @@ export function UserDetailModal({
                       name: data.name,
                       email: data.email,
                       role: data.role,
+                      crewPosition: data.crewPosition,
                       shiftStatus: data.shiftStatus,
                       isActive: data.isActive,
                     }}
@@ -247,8 +250,9 @@ export function UserDetailModal({
                   <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
                     <div><span className="block text-[10px] font-medium text-[var(--apple-text-tertiary)]">Name</span><p className="font-medium text-[var(--apple-text-primary)]">{data.name}</p></div>
                     <div><span className="block text-[10px] font-medium text-[var(--apple-text-tertiary)]">Email</span><p className="truncate font-medium text-[var(--apple-text-primary)]" title={data.email}>{data.email}</p></div>
-                    <div><span className="block text-[10px] font-medium text-[var(--apple-text-tertiary)]">Role</span><p className="font-medium text-[var(--apple-text-primary)]">{data.role}</p></div>
-                    <div><span className="block text-[10px] font-medium text-[var(--apple-text-tertiary)]">Shift status</span><p className="font-medium text-[var(--apple-text-primary)]">{data.shiftStatus ?? "Off duty"}</p></div>
+                    <div><span className="block text-[10px] font-medium text-[var(--apple-text-tertiary)]">App role</span><p className="font-medium text-[var(--apple-text-primary)]">{data.role}</p></div>
+                    <div><span className="block text-[10px] font-medium text-[var(--apple-text-tertiary)]">Position</span><p className="font-medium text-[var(--apple-text-primary)]">{data.crewPosition ? CREW_POSITION_LABELS[data.crewPosition as keyof typeof CREW_POSITION_LABELS] : "—"}</p></div>
+                    <div><span className="block text-[10px] font-medium text-[var(--apple-text-tertiary)]">Crew status</span><p className="font-medium text-[var(--apple-text-primary)]">{data.shiftStatus ? SHIFT_STATUS_LABELS[data.shiftStatus as keyof typeof SHIFT_STATUS_LABELS] : "—"}</p></div>
                     <div><span className="block text-[10px] font-medium text-[var(--apple-text-tertiary)]">Active</span><p className="font-medium text-[var(--apple-text-primary)]">{data.isActive ? "Yes" : "No"}</p></div>
                   </div>
                 )}

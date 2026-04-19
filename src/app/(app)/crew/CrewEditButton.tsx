@@ -2,32 +2,32 @@
 
 import { useEffect, useMemo, useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import type { CrewPosition, Role, ShiftStatus } from "@prisma/client";
 import { updateUser } from "@/actions/users";
 import { CustomSelect } from "@/components/ui/CustomSelect";
 import { PencilIcon, XIcon, CheckIcon } from "@/components/ui/Icons";
+import { CREW_POSITION_SELECT_OPTIONS, SHIFT_STATUS_SELECT_OPTIONS } from "@/lib/crew";
 
-type Role = "ADMIN" | "MANAGER" | "TECHNICIAN";
-type ShiftStatus = "ON_SHIFT" | "OFF_DUTY" | "UNAVAILABLE";
+const ROLE_LABELS_ADMIN: { value: Role; label: string }[] = [
+  { value: "TECHNICIAN", label: "Crew (app access)" },
+  { value: "MANAGER", label: "Member (app access)" },
+  { value: "ADMIN", label: "Admin (app access)" },
+];
+
+const ROLE_LABELS_MANAGER: { value: Role; label: string }[] = [
+  { value: "TECHNICIAN", label: "Crew (app access)" },
+  { value: "MANAGER", label: "Member (app access)" },
+];
 
 export type CrewEditUserLite = {
   id: string;
   name: string;
   email: string;
   role: Role;
+  crewPosition: CrewPosition;
   shiftStatus: ShiftStatus;
   isActive: boolean;
 };
-
-const ROLE_LABELS_ADMIN: { value: Role; label: string }[] = [
-  { value: "TECHNICIAN", label: "Crew" },
-  { value: "MANAGER", label: "Member" },
-  { value: "ADMIN", label: "Admin" },
-];
-
-const ROLE_LABELS_MANAGER: { value: Role; label: string }[] = [
-  { value: "TECHNICIAN", label: "Crew" },
-  { value: "MANAGER", label: "Member" },
-];
 
 export function CrewEditModal({
   user,
@@ -50,6 +50,7 @@ export function CrewEditModal({
       name: user.name ?? "",
       email: user.email ?? "",
       role: user.role ?? "TECHNICIAN",
+      crewPosition: user.crewPosition ?? "DECKHAND_1_2",
       shiftStatus: user.shiftStatus ?? "OFF_DUTY",
       isActive: user.isActive ?? true,
     }),
@@ -59,6 +60,7 @@ export function CrewEditModal({
   const [name, setName] = useState(initial.name);
   const [email, setEmail] = useState(initial.email);
   const [role, setRole] = useState<Role>(initial.role);
+  const [crewPosition, setCrewPosition] = useState<CrewPosition>(initial.crewPosition);
   const [shiftStatus, setShiftStatus] = useState<ShiftStatus>(initial.shiftStatus);
   const [isActive, setIsActive] = useState<boolean>(initial.isActive);
 
@@ -68,6 +70,7 @@ export function CrewEditModal({
     setName(initial.name);
     setEmail(initial.email);
     setRole(initial.role);
+    setCrewPosition(initial.crewPosition);
     setShiftStatus(initial.shiftStatus);
     setIsActive(initial.isActive);
   }, [open, initial]);
@@ -80,6 +83,7 @@ export function CrewEditModal({
     fd.set("name", name);
     fd.set("email", email);
     fd.set("role", role);
+    fd.set("crewPosition", crewPosition);
     fd.set("shiftStatus", shiftStatus);
     fd.set("isActive", isActive ? "true" : "false");
 
@@ -96,7 +100,7 @@ export function CrewEditModal({
 
   const roleOptions = useMemo(() => {
     if (actorRole === "ADMIN") return ROLE_LABELS_ADMIN;
-    if (user.role === "ADMIN") return [{ value: "ADMIN" as const, label: "Admin" }];
+    if (user.role === "ADMIN") return [{ value: "ADMIN" as const, label: "Admin (app access)" }];
     return ROLE_LABELS_MANAGER;
   }, [actorRole, user.role]);
 
@@ -143,7 +147,7 @@ export function CrewEditModal({
           </div>
 
           <div className="grid gap-1">
-            <label className="text-sm text-gray-600">Role</label>
+            <label className="text-sm text-gray-600">App access level</label>
             <CustomSelect
               value={role}
               onChange={(v) => setRole(v as Role)}
@@ -152,21 +156,26 @@ export function CrewEditModal({
           </div>
 
           <div className="grid gap-1">
-            <label className="text-sm text-gray-600">Shift status</label>
+            <label className="text-sm text-gray-600">Position</label>
+            <CustomSelect
+              value={crewPosition}
+              onChange={(v) => setCrewPosition(v as CrewPosition)}
+              options={CREW_POSITION_SELECT_OPTIONS}
+            />
+          </div>
+
+          <div className="grid gap-1">
+            <label className="text-sm text-gray-600">Crew status</label>
             <CustomSelect
               value={shiftStatus}
               onChange={(v) => setShiftStatus(v as ShiftStatus)}
-              options={[
-                { value: "ON_SHIFT", label: "ON_SHIFT" },
-                { value: "OFF_DUTY", label: "OFF_DUTY" },
-                { value: "UNAVAILABLE", label: "UNAVAILABLE" },
-              ]}
+              options={SHIFT_STATUS_SELECT_OPTIONS}
             />
           </div>
 
           <label className="flex items-center gap-2 text-sm text-[var(--apple-text-primary)]">
             <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
-            Active
+            Account active
           </label>
 
           {error ? <div className="text-sm text-red-600">{error}</div> : null}

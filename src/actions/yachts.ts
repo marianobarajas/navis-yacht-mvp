@@ -58,7 +58,11 @@ export async function getYachtById(id: string) {
   const yacht = await prisma.yacht.findFirst({
     where: { id, organizationId },
     include: {
-      assignments: { include: { user: { select: { id: true, name: true, email: true, role: true } } } },
+      assignments: {
+        include: {
+          user: { select: { id: true, name: true, email: true, role: true, crewPosition: true } },
+        },
+      },
     },
   });
   if (!yacht) return { error: "Not found", data: null };

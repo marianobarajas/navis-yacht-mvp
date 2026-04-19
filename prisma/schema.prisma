@@ -14,10 +14,25 @@ enum Role {
   TECHNICIAN
 }
 
+/// Yacht job title (shown on crew cards). Separate from `Role` (app permissions).
+enum CrewPosition {
+  CAPTAIN
+  CHIEF_ENGINEER
+  FIRST_MATE
+  BOSUN
+  DECKHAND_1_2
+  CHEF
+  CHIEF_STEWARDESS
+  STEWARDESS_1_2
+}
+
 enum ShiftStatus {
-  ON_SHIFT
+  ACTIVE
+  ON_DUTY
   OFF_DUTY
-  UNAVAILABLE
+  ON_LEAVE
+  ON_ROTATION
+  STANDBY
 }
 
 enum Priority {
@@ -75,6 +90,7 @@ model User {
   inviteToken          String?   @unique
   inviteTokenExpiresAt DateTime?
   role         Role
+  crewPosition CrewPosition @default(DECKHAND_1_2)
   isActive     Boolean     @default(true)
   profileImage String?
   shiftStatus         ShiftStatus @default(OFF_DUTY)
