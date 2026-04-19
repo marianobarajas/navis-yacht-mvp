@@ -33,22 +33,9 @@ export function priorityDotClass(priority: string): string {
   }
 }
 
+/** Left accent on crew cards by role (yacht position). */
 export function roleBorderLeftClass(role: string): string {
   switch (role) {
-    case "ADMIN":
-      return "border-l-[var(--accent-urgent)]";
-    case "MANAGER":
-      return "border-l-[var(--palette-muted-teal)]";
-    case "TECHNICIAN":
-      return "border-l-[var(--palette-success-dark)]";
-    default:
-      return "border-l-[var(--apple-border-strong)]";
-  }
-}
-
-/** Left accent on crew cards by yacht job title */
-export function crewPositionBorderLeftClass(position: string): string {
-  switch (position) {
     case "CAPTAIN":
       return "border-l-amber-400";
     case "CHIEF_ENGINEER":

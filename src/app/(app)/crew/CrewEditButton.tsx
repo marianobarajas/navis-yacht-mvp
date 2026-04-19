@@ -2,29 +2,18 @@
 
 import { useEffect, useMemo, useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import type { CrewPosition, Role, ShiftStatus } from "@prisma/client";
+import type { Role, ShiftStatus } from "@prisma/client";
 import { updateUser } from "@/actions/users";
 import { CustomSelect } from "@/components/ui/CustomSelect";
 import { PencilIcon, XIcon, CheckIcon } from "@/components/ui/Icons";
-import { CREW_POSITION_SELECT_OPTIONS, SHIFT_STATUS_SELECT_OPTIONS } from "@/lib/crew";
-
-const ROLE_LABELS_ADMIN: { value: Role; label: string }[] = [
-  { value: "TECHNICIAN", label: "Crew (app access)" },
-  { value: "MANAGER", label: "Member (app access)" },
-  { value: "ADMIN", label: "Admin (app access)" },
-];
-
-const ROLE_LABELS_MANAGER: { value: Role; label: string }[] = [
-  { value: "TECHNICIAN", label: "Crew (app access)" },
-  { value: "MANAGER", label: "Member (app access)" },
-];
+import { ROLE_SELECT_OPTIONS, SHIFT_STATUS_SELECT_OPTIONS } from "@/lib/crew";
+import { isCaptain } from "@/lib/rbac";
 
 export type CrewEditUserLite = {
   id: string;
   name: string;
   email: string;
   role: Role;
-  crewPosition: CrewPosition;
   shiftStatus: ShiftStatus;
   isActive: boolean;
 };
@@ -33,12 +22,11 @@ export function CrewEditModal({
   user,
   open,
   onClose,
-  actorRole = "ADMIN",
+  actorRole = "CAPTAIN",
 }: {
   user: CrewEditUserLite;
   open: boolean;
   onClose: () => void;
-  /** Who is editing; managers cannot assign Admin. */
   actorRole?: Role;
 }) {
   const router = useRouter();
@@ -49,8 +37,7 @@ export function CrewEditModal({
     () => ({
       name: user.name ?? "",
       email: user.email ?? "",
-      role: user.role ?? "TECHNICIAN",
-      crewPosition: user.crewPosition ?? "DECKHAND_1_2",
+      role: user.role ?? "DECKHAND_1_2",
       shiftStatus: user.shiftStatus ?? "OFF_DUTY",
       isActive: user.isActive ?? true,
     }),
@@ -60,7 +47,6 @@ export function CrewEditModal({
   const [name, setName] = useState(initial.name);
   const [email, setEmail] = useState(initial.email);
   const [role, setRole] = useState<Role>(initial.role);
-  const [crewPosition, setCrewPosition] = useState<CrewPosition>(initial.crewPosition);
   const [shiftStatus, setShiftStatus] = useState<ShiftStatus>(initial.shiftStatus);
   const [isActive, setIsActive] = useState<boolean>(initial.isActive);
 
@@ -70,10 +56,14 @@ export function CrewEditModal({
     setName(initial.name);
     setEmail(initial.email);
     setRole(initial.role);
-    setCrewPosition(initial.crewPosition);
     setShiftStatus(initial.shiftStatus);
     setIsActive(initial.isActive);
   }, [open, initial]);
+
+  const roleOptions = useMemo(() => {
+    if (isCaptain(actorRole)) return ROLE_SELECT_OPTIONS;
+    return ROLE_SELECT_OPTIONS.filter((o) => o.value !== "CAPTAIN");
+  }, [actorRole]);
 
   function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -83,7 +73,6 @@ export function CrewEditModal({
     fd.set("name", name);
     fd.set("email", email);
     fd.set("role", role);
-    fd.set("crewPosition", crewPosition);
     fd.set("shiftStatus", shiftStatus);
     fd.set("isActive", isActive ? "true" : "false");
 
@@ -97,12 +86,6 @@ export function CrewEditModal({
       router.refresh();
     });
   }
-
-  const roleOptions = useMemo(() => {
-    if (actorRole === "ADMIN") return ROLE_LABELS_ADMIN;
-    if (user.role === "ADMIN") return [{ value: "ADMIN" as const, label: "Admin (app access)" }];
-    return ROLE_LABELS_MANAGER;
-  }, [actorRole, user.role]);
 
   if (!open) return null;
 
@@ -147,20 +130,11 @@ export function CrewEditModal({
           </div>
 
           <div className="grid gap-1">
-            <label className="text-sm text-gray-600">App access level</label>
+            <label className="text-sm text-gray-600">Role</label>
             <CustomSelect
               value={role}
               onChange={(v) => setRole(v as Role)}
               options={roleOptions}
-            />
-          </div>
-
-          <div className="grid gap-1">
-            <label className="text-sm text-gray-600">Position</label>
-            <CustomSelect
-              value={crewPosition}
-              onChange={(v) => setCrewPosition(v as CrewPosition)}
-              options={CREW_POSITION_SELECT_OPTIONS}
             />
           </div>
 
@@ -218,7 +192,7 @@ export default function CrewEditButton({ user }: { user: CrewEditUserLite }) {
         <PencilIcon className="h-4 w-4" />
       </button>
 
-      <CrewEditModal user={user} open={open} onClose={() => setOpen(false)} actorRole="ADMIN" />
+      <CrewEditModal user={user} open={open} onClose={() => setOpen(false)} actorRole="CAPTAIN" />
     </>
   );
 }

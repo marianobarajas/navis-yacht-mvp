@@ -27,7 +27,7 @@ export default async function AdminUsersPage() {
 
       {!res.error ? (
         <div className="mt-6">
-          <CrewAddMemberCard yachts={yachts} allowAdminRole={actorRole === "ADMIN"} />
+          <CrewAddMemberCard yachts={yachts} allowCaptainRole={actorRole === "CAPTAIN"} />
         </div>
       ) : null}
 

@@ -2,12 +2,12 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { CustomSelect } from "@/components/ui/CustomSelect";
-import { CREW_POSITION_SELECT_OPTIONS, SHIFT_STATUS_SELECT_OPTIONS } from "@/lib/crew";
+import { ROLE_SELECT_OPTIONS, SHIFT_STATUS_SELECT_OPTIONS } from "@/lib/crew";
 
 export function CrewFilters() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const position = searchParams.get("position") ?? "";
+  const role = searchParams.get("role") ?? "";
   const status = searchParams.get("status") ?? "";
 
   function updateFilter(key: string, value: string) {
@@ -20,11 +20,11 @@ export function CrewFilters() {
   return (
     <div className="mt-4 flex flex-wrap gap-3">
       <CustomSelect
-        value={position}
-        onChange={(v) => updateFilter("position", v)}
-        placeholder="All positions"
+        value={role}
+        onChange={(v) => updateFilter("role", v)}
+        placeholder="All roles"
         className="min-w-[160px]"
-        options={[{ value: "", label: "All positions" }, ...CREW_POSITION_SELECT_OPTIONS]}
+        options={[{ value: "", label: "All roles" }, ...ROLE_SELECT_OPTIONS]}
       />
       <CustomSelect
         value={status}

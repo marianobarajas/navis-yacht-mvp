@@ -8,14 +8,8 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+/// Yacht crew role (permissions derive from tier — see `src/lib/rbac.ts`).
 enum Role {
-  ADMIN
-  MANAGER
-  TECHNICIAN
-}
-
-/// Yacht job title (shown on crew cards). Separate from `Role` (app permissions).
-enum CrewPosition {
   CAPTAIN
   CHIEF_ENGINEER
   FIRST_MATE
@@ -89,8 +83,7 @@ model User {
   /// Set until the user completes invite; login blocked while non-null.
   inviteToken          String?   @unique
   inviteTokenExpiresAt DateTime?
-  role         Role
-  crewPosition CrewPosition @default(DECKHAND_1_2)
+  role         Role        @default(DECKHAND_1_2)
   isActive     Boolean     @default(true)
   profileImage String?
   shiftStatus         ShiftStatus @default(OFF_DUTY)

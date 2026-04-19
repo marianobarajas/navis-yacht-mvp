@@ -1,6 +1,6 @@
-import type { CrewPosition, ShiftStatus } from "@prisma/client";
+import type { Role, ShiftStatus } from "@prisma/client";
 
-export const CREW_POSITION_ORDER: CrewPosition[] = [
+export const ROLE_ORDER: Role[] = [
   "CAPTAIN",
   "CHIEF_ENGINEER",
   "FIRST_MATE",
@@ -11,7 +11,7 @@ export const CREW_POSITION_ORDER: CrewPosition[] = [
   "STEWARDESS_1_2",
 ];
 
-export const CREW_POSITION_LABELS: Record<CrewPosition, string> = {
+export const ROLE_LABELS: Record<Role, string> = {
   CAPTAIN: "Captain",
   CHIEF_ENGINEER: "Chief Engineer",
   FIRST_MATE: "First Mate",
@@ -40,9 +40,9 @@ export const SHIFT_STATUS_LABELS: Record<ShiftStatus, string> = {
   STANDBY: "Standby",
 };
 
-export const CREW_POSITION_SELECT_OPTIONS = CREW_POSITION_ORDER.map((value) => ({
+export const ROLE_SELECT_OPTIONS = ROLE_ORDER.map((value) => ({
   value,
-  label: CREW_POSITION_LABELS[value],
+  label: ROLE_LABELS[value],
 }));
 
 export const SHIFT_STATUS_SELECT_OPTIONS = SHIFT_STATUS_ORDER.map((value) => ({
@@ -50,9 +50,9 @@ export const SHIFT_STATUS_SELECT_OPTIONS = SHIFT_STATUS_ORDER.map((value) => ({
   label: SHIFT_STATUS_LABELS[value],
 }));
 
-export function crewPositionSortIndex(position: CrewPosition): number {
-  const i = CREW_POSITION_ORDER.indexOf(position);
-  return i >= 0 ? i : CREW_POSITION_ORDER.length;
+export function roleSortIndex(role: Role): number {
+  const i = ROLE_ORDER.indexOf(role);
+  return i >= 0 ? i : ROLE_ORDER.length;
 }
 
 /** “Present / working” states — used for avatar status dot */

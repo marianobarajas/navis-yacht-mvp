@@ -1,10 +1,20 @@
 import NextAuth, { DefaultSession } from "next-auth";
 
+type FleetRole =
+  | "CAPTAIN"
+  | "CHIEF_ENGINEER"
+  | "FIRST_MATE"
+  | "BOSUN"
+  | "DECKHAND_1_2"
+  | "CHEF"
+  | "CHIEF_STEWARDESS"
+  | "STEWARDESS_1_2";
+
 declare module "next-auth" {
   interface Session {
     user: {
       id: string;
-      role: "ADMIN" | "MANAGER" | "TECHNICIAN";
+      role: FleetRole;
       /** Tenant scope; omitted for platform-only accounts. */
       organizationId?: string;
       isPlatformAdmin?: boolean;
@@ -14,7 +24,7 @@ declare module "next-auth" {
 
   interface User {
     id: string;
-    role: "ADMIN" | "MANAGER" | "TECHNICIAN";
+    role: FleetRole;
     organizationId?: string | null;
     isPlatformAdmin?: boolean;
     profileImage?: string | null;
@@ -24,7 +34,7 @@ declare module "next-auth" {
 declare module "next-auth/jwt" {
   interface JWT {
     id?: string;
-    role?: "ADMIN" | "MANAGER" | "TECHNICIAN";
+    role?: FleetRole;
     organizationId?: string;
     isPlatformAdmin?: boolean;
     profileImage?: string | null;

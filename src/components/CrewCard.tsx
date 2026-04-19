@@ -1,14 +1,13 @@
-import { ShiftBadge, CrewPositionBadge } from "@/components/ui/Badge";
-import { crewPositionBorderLeftClass } from "@/lib/uiAccent";
+import { ShiftBadge, RoleBadge } from "@/components/ui/Badge";
+import { roleBorderLeftClass } from "@/lib/uiAccent";
 import { shiftStatusShowsActiveDot } from "@/lib/crew";
-import type { CrewPosition, Role, ShiftStatus } from "@prisma/client";
+import type { Role, ShiftStatus } from "@prisma/client";
 
 type Crew = {
   id: string;
   name: string;
   email: string;
   role: Role;
-  crewPosition: CrewPosition;
   shiftStatus: ShiftStatus;
   profileImage?: string | null;
   _count?: { assignmentsAsUser: number };
@@ -24,8 +23,8 @@ export function CrewCard({
   glass?: boolean;
 }) {
   const shell = glass
-    ? `rounded-[var(--apple-radius-lg)] border border-white/20 border-l-4 bg-white/[0.08] p-5 shadow-md shadow-black/25 ring-1 ring-white/15 backdrop-blur-md transition-all duration-300 hover:scale-[1.02] hover:border-white/40 hover:bg-white/[0.12] hover:ring-white/25 hover:shadow-xl ${crewPositionBorderLeftClass(crew.crewPosition)}`
-    : `rounded-[var(--apple-radius-lg)] border border-[var(--apple-border)] border-l-4 bg-[var(--apple-bg-elevated)] p-5 shadow-[var(--apple-shadow-sm)] transition-all duration-200 hover:shadow-[var(--apple-shadow)] hover:border-[var(--apple-border-strong)] ${crewPositionBorderLeftClass(crew.crewPosition)}`;
+    ? `rounded-[var(--apple-radius-lg)] border border-white/20 border-l-4 bg-white/[0.08] p-5 shadow-md shadow-black/25 ring-1 ring-white/15 backdrop-blur-md transition-all duration-300 hover:scale-[1.02] hover:border-white/40 hover:bg-white/[0.12] hover:ring-white/25 hover:shadow-xl ${roleBorderLeftClass(crew.role)}`
+    : `rounded-[var(--apple-radius-lg)] border border-[var(--apple-border)] border-l-4 bg-[var(--apple-bg-elevated)] p-5 shadow-[var(--apple-shadow-sm)] transition-all duration-200 hover:shadow-[var(--apple-shadow)] hover:border-[var(--apple-border-strong)] ${roleBorderLeftClass(crew.role)}`;
 
   const showDot = shiftStatusShowsActiveDot(crew.shiftStatus);
 
@@ -55,7 +54,7 @@ export function CrewCard({
             {crew.name}
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <CrewPositionBadge position={crew.crewPosition} />
+            <RoleBadge role={crew.role} />
             <ShiftBadge status={crew.shiftStatus} />
           </div>
           {showAssignments && crew._count !== undefined && (

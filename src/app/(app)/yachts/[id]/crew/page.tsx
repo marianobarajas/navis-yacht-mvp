@@ -5,30 +5,30 @@ import { getYachtById } from "@/actions/yachts";
 import { listCrew } from "@/actions/users";
 import { AddCrewPanel } from "./AddCrewPanel";
 import { RemoveCrewButton } from "./RemoveCrewButton";
-import { CrewPositionBadge } from "@/components/ui/Badge";
-import type { CrewPosition } from "@prisma/client";
-import { CREW_POSITION_LABELS, CREW_POSITION_ORDER, crewPositionSortIndex } from "@/lib/crew";
+import { RoleBadge } from "@/components/ui/Badge";
+import type { Role } from "@prisma/client";
+import { ROLE_LABELS, ROLE_ORDER, roleSortIndex } from "@/lib/crew";
 
 type Assignment = {
   id: string;
-  user: { id: string; name: string; email: string; crewPosition: CrewPosition };
+  user: { id: string; name: string; email: string; role: Role };
 };
 
-function sortAssignmentsByPosition(assignments: Assignment[]): Assignment[] {
+function sortAssignmentsByRole(assignments: Assignment[]): Assignment[] {
   return [...assignments].sort((a, b) => {
-    const pa = a.user.crewPosition ?? "DECKHAND_1_2";
-    const pb = b.user.crewPosition ?? "DECKHAND_1_2";
-    return crewPositionSortIndex(pa) - crewPositionSortIndex(pb);
+    const pa = a.user.role ?? "DECKHAND_1_2";
+    const pb = b.user.role ?? "DECKHAND_1_2";
+    return roleSortIndex(pa) - roleSortIndex(pb);
   });
 }
 
-function groupAssignmentsByPosition(assignments: Assignment[]): { key: string; label: string; items: Assignment[] }[] {
-  const sorted = sortAssignmentsByPosition(assignments);
+function groupAssignmentsByRole(assignments: Assignment[]): { key: string; label: string; items: Assignment[] }[] {
+  const sorted = sortAssignmentsByRole(assignments);
   const groups: { key: string; label: string; items: Assignment[] }[] = [];
-  for (const pos of CREW_POSITION_ORDER) {
-    const items = sorted.filter((a) => (a.user.crewPosition ?? "DECKHAND_1_2") === pos);
+  for (const pos of ROLE_ORDER) {
+    const items = sorted.filter((a) => (a.user.role ?? "DECKHAND_1_2") === pos);
     if (items.length > 0) {
-      groups.push({ key: pos, label: CREW_POSITION_LABELS[pos], items });
+      groups.push({ key: pos, label: ROLE_LABELS[pos], items });
     }
   }
   const seen = new Set(groups.flatMap((g) => g.items));
@@ -46,7 +46,7 @@ export default async function YachtCrewPage({
 }) {
   const { id } = await params;
   const session = await getServerSession(authOptions);
-  const canAssign = !!session?.user && canAssignYacht((session.user as any)?.role);
+  const canAssign = !!session?.user && canAssignYacht((session.user as { role?: string })?.role);
 
   const [yachtRes, crewRes] = await Promise.all([
     getYachtById(id),
@@ -55,11 +55,11 @@ export default async function YachtCrewPage({
 
   if (yachtRes.error || !yachtRes.data) return null;
   const yacht = yachtRes.data;
-  const users = (crewRes as any)?.data ?? [];
+  const users = (crewRes as { data?: { id: string; name: string; email: string }[] })?.data ?? [];
 
   const assignments = yacht.assignments as Assignment[];
   const assignedUserIds = assignments.map((a) => a.user.id);
-  const grouped = groupAssignmentsByPosition(assignments);
+  const grouped = groupAssignmentsByRole(assignments);
 
   return (
     <div className="space-y-8">
@@ -92,7 +92,7 @@ export default async function YachtCrewPage({
                         <p className="truncate font-medium text-[var(--apple-text-primary)]">{a.user.name}</p>
                         <p className="truncate text-sm text-[var(--apple-text-secondary)]">{a.user.email}</p>
                         <div className="mt-2">
-                          <CrewPositionBadge position={a.user.crewPosition} />
+                          <RoleBadge role={a.user.role} />
                         </div>
                       </div>
                     </div>

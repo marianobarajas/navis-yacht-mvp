@@ -24,7 +24,7 @@ async function main() {
     update: {
       organizationId: org.id,
       isPlatformAdmin: false,
-      crewPosition: "CAPTAIN",
+      role: "CAPTAIN",
       shiftStatus: "OFF_DUTY",
     },
     create: {
@@ -32,8 +32,7 @@ async function main() {
       name: "Admin User",
       email: "admin@oceanops.demo",
       passwordHash: adminHash,
-      role: "ADMIN",
-      crewPosition: "CAPTAIN",
+      role: "CAPTAIN",
       shiftStatus: "OFF_DUTY",
       isPlatformAdmin: false,
     },
@@ -44,7 +43,7 @@ async function main() {
     update: {
       organizationId: org.id,
       isPlatformAdmin: false,
-      crewPosition: "CHIEF_ENGINEER",
+      role: "CHIEF_ENGINEER",
       shiftStatus: "OFF_DUTY",
     },
     create: {
@@ -52,8 +51,7 @@ async function main() {
       name: "Manager User",
       email: "manager@oceanops.demo",
       passwordHash: managerHash,
-      role: "MANAGER",
-      crewPosition: "CHIEF_ENGINEER",
+      role: "CHIEF_ENGINEER",
       shiftStatus: "OFF_DUTY",
       isPlatformAdmin: false,
     },
@@ -64,7 +62,7 @@ async function main() {
     update: {
       organizationId: org.id,
       isPlatformAdmin: false,
-      crewPosition: "DECKHAND_1_2",
+      role: "DECKHAND_1_2",
       shiftStatus: "ON_DUTY",
     },
     create: {
@@ -72,8 +70,7 @@ async function main() {
       name: "Tech One",
       email: "tech1@oceanops.demo",
       passwordHash: techHash,
-      role: "TECHNICIAN",
-      crewPosition: "DECKHAND_1_2",
+      role: "DECKHAND_1_2",
       shiftStatus: "ON_DUTY",
       isPlatformAdmin: false,
     },
@@ -84,7 +81,7 @@ async function main() {
     update: {
       organizationId: org.id,
       isPlatformAdmin: false,
-      crewPosition: "CHEF",
+      role: "CHEF",
       shiftStatus: "OFF_DUTY",
     },
     create: {
@@ -92,8 +89,7 @@ async function main() {
       name: "Tech Two",
       email: "tech2@oceanops.demo",
       passwordHash: techHash,
-      role: "TECHNICIAN",
-      crewPosition: "CHEF",
+      role: "CHEF",
       shiftStatus: "OFF_DUTY",
       isPlatformAdmin: false,
     },
@@ -220,7 +216,7 @@ async function main() {
     update: {
       name: "Platform owner",
       passwordHash: platformHash,
-      role: "ADMIN",
+      role: "CAPTAIN",
       isPlatformAdmin: true,
       organizationId: null,
     },
@@ -228,7 +224,7 @@ async function main() {
       email: "admin@admin",
       name: "Platform owner",
       passwordHash: platformHash,
-      role: "ADMIN",
+      role: "CAPTAIN",
       isPlatformAdmin: true,
       organizationId: null,
     },

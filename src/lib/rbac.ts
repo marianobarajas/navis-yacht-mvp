@@ -1,27 +1,50 @@
-export type AppRole = "ADMIN" | "MANAGER" | "TECHNICIAN";
+import type { Role } from "@prisma/client";
 
-export function isAdmin(role?: string) {
-  return role === "ADMIN";
+/** Full org control (invite Captain, edit Captains, last-Captain checks). */
+export function isCaptain(role?: string) {
+  return role === "CAPTAIN";
 }
 
-export function isManager(role?: string) {
-  return role === "MANAGER";
+/** Bridge / department heads — manage crew & yachts, cannot assign or edit Captains. */
+const MANAGER_TIER: Role[] = ["CHIEF_ENGINEER", "FIRST_MATE", "BOSUN"];
+
+export function isManagerTier(role?: string): role is Role {
+  return role !== undefined && MANAGER_TIER.includes(role as Role);
 }
 
-export function isTechnician(role?: string) {
-  return role === "TECHNICIAN";
+/** Deck & interior crew — task-focused access (assigned yachts, logs). */
+const CREW_TIER: Role[] = ["DECKHAND_1_2", "CHEF", "CHIEF_STEWARDESS", "STEWARDESS_1_2"];
+
+export function isCrewTier(role?: string): role is Role {
+  return role !== undefined && CREW_TIER.includes(role as Role);
 }
 
+/** Captain or bridge — admin UI, manage users/yachts (with Captain-only rules for Captains). */
 export function isManagerOrAbove(role?: string) {
-  return role === "ADMIN" || role === "MANAGER";
+  return isCaptain(role) || isManagerTier(role);
 }
 
-// Users
 export function canCreateUser(role?: string) {
   return isManagerOrAbove(role);
 }
 
-// Yachts
+export function canAssignCaptain(actor?: string) {
+  return isCaptain(actor);
+}
+
+/** Non-captains may assign any role except Captain. */
+export function canAssignRole(actorRole: Role, targetRole: Role): boolean {
+  if (isCaptain(actorRole)) return true;
+  if (!isManagerOrAbove(actorRole)) return false;
+  return targetRole !== "CAPTAIN";
+}
+
+export function canEditUserRole(actorRole: Role, targetRole: Role): boolean {
+  if (!isManagerOrAbove(actorRole)) return false;
+  if (targetRole === "CAPTAIN" && !isCaptain(actorRole)) return false;
+  return true;
+}
+
 export function canCreateYacht(role?: string) {
   return isManagerOrAbove(role);
 }
@@ -34,7 +57,6 @@ export function canManageYachts(role?: string) {
   return isManagerOrAbove(role);
 }
 
-// Work Orders / Tasks
 export function canCreateWorkOrder(role?: string) {
   return isManagerOrAbove(role);
 }
@@ -43,13 +65,10 @@ export function canAssignWorkOrder(role?: string) {
   return isManagerOrAbove(role);
 }
 
-// Logs
 export function canCreateLog(role?: string) {
-  // everyone can create logs, but server actions should still enforce scope (assigned yachts for TECH)
-  return isManagerOrAbove(role) || isTechnician(role);
+  return isManagerOrAbove(role) || isCrewTier(role);
 }
 
-// Calendar
 export function canCreateCalendarEvent(role?: string) {
   return isManagerOrAbove(role);
 }

@@ -12,8 +12,8 @@ import {
 } from "@/actions/notifications";
 import { CheckIcon } from "@/components/ui/Icons";
 import { CustomSelect } from "@/components/ui/CustomSelect";
-import { CREW_POSITION_LABELS, SHIFT_STATUS_SELECT_OPTIONS } from "@/lib/crew";
-import type { CrewPosition } from "@prisma/client";
+import { ROLE_LABELS, SHIFT_STATUS_SELECT_OPTIONS } from "@/lib/crew";
+import type { Role } from "@prisma/client";
 
 const ALL_PERMISSIONS: { id: string; label: string }[] = [
   { id: "all_permissions", label: "All permissions" },
@@ -29,10 +29,19 @@ const ALL_PERMISSIONS: { id: string; label: string }[] = [
   { id: "view_documents_assigned_yachts", label: "View documents for assigned yachts" },
 ];
 
+const PERM_CAPTAIN = ["all_permissions", "manage_users_yachts", "create_assign_tasks", "full_system_access"];
+const PERM_MANAGER = ["manage_yachts_crew", "create_assign_tasks", "view_all_logs_documents", "manage_team_members"];
+const PERM_CREW = ["view_assigned_yachts", "create_logs", "update_task_status", "view_documents_assigned_yachts"];
+
 const ROLE_DEFAULT_PERMISSIONS: Record<string, string[]> = {
-  ADMIN: ["all_permissions", "manage_users_yachts", "create_assign_tasks", "full_system_access"],
-  MANAGER: ["manage_yachts_crew", "create_assign_tasks", "view_all_logs_documents", "manage_team_members"],
-  TECHNICIAN: ["view_assigned_yachts", "create_logs", "update_task_status", "view_documents_assigned_yachts"],
+  CAPTAIN: PERM_CAPTAIN,
+  CHIEF_ENGINEER: PERM_MANAGER,
+  FIRST_MATE: PERM_MANAGER,
+  BOSUN: PERM_MANAGER,
+  DECKHAND_1_2: PERM_CREW,
+  CHEF: PERM_CREW,
+  CHIEF_STEWARDESS: PERM_CREW,
+  STEWARDESS_1_2: PERM_CREW,
 };
 
 function getDefaultForRole(role: string): Record<string, boolean> {
@@ -44,8 +53,7 @@ export type Profile = {
   id: string;
   name: string;
   email: string;
-  role: string;
-  crewPosition: CrewPosition;
+  role: Role;
   isActive: boolean;
   shiftStatus: string | null;
   permissionOverrides: Record<string, boolean> | null;
@@ -256,15 +264,9 @@ export function ProfileView({ profile }: { profile: Profile }) {
             </p>
           </div>
           <div className="grid gap-1">
-            <label className="text-xs font-medium text-[var(--apple-text-secondary)]">App access</label>
+            <label className="text-xs font-medium text-[var(--apple-text-secondary)]">Role</label>
             <p className="rounded-lg border border-[var(--apple-border)] bg-[var(--apple-bg-subtle)] px-3 py-2 text-xs font-medium text-[var(--apple-text-primary)]">
-              {profile.role}
-            </p>
-          </div>
-          <div className="col-span-2 grid gap-1">
-            <label className="text-xs font-medium text-[var(--apple-text-secondary)]">Position</label>
-            <p className="rounded-lg border border-[var(--apple-border)] bg-[var(--apple-bg-subtle)] px-3 py-2 text-xs font-medium text-[var(--apple-text-primary)]">
-              {CREW_POSITION_LABELS[profile.crewPosition]}
+              {ROLE_LABELS[profile.role]}
             </p>
           </div>
           <div className="col-span-2 grid gap-1">

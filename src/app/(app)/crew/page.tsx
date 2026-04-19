@@ -11,23 +11,23 @@ import { CrewMembersTable, type CrewTableRow } from "./CrewMembersTable";
 export default async function CrewPage({
   searchParams,
 }: {
-  searchParams: Promise<{ position?: string; status?: string }>;
+  searchParams: Promise<{ role?: string; status?: string }>;
 }) {
   const session = await getServerSession(authOptions);
   if (!session?.user) throw new Error("Unauthorized");
 
   const params = await searchParams;
-  const position = params.position ?? undefined;
+  const roleFilter = params.role ?? undefined;
   const status = params.status ?? undefined;
 
-  const sessionRole = (session.user as { role?: Role }).role ?? "TECHNICIAN";
+  const sessionRole = (session.user as { role?: Role }).role ?? "DECKHAND_1_2";
   const canManage = isManagerOrAbove(sessionRole);
-  const allowAdminRole = sessionRole === "ADMIN";
+  const allowCaptainRole = sessionRole === "CAPTAIN";
 
   const [crewRes, yachtsRes] = await Promise.all([
     listCrew(
-      position || status
-        ? { crewPosition: position ?? undefined, shiftStatus: status ?? undefined }
+      roleFilter || status
+        ? { role: roleFilter ?? undefined, shiftStatus: status ?? undefined }
         : undefined
     ),
     listYachts(),
@@ -48,7 +48,6 @@ export default async function CrewPage({
     name: c.name,
     email: c.email,
     role: c.role,
-    crewPosition: c.crewPosition,
     shiftStatus: c.shiftStatus,
     isActive: c.isActive,
     profileImage: c.profileImage ?? null,
@@ -71,7 +70,7 @@ export default async function CrewPage({
       >
         {canManage ? (
           <div className="mt-6">
-            <CrewAddMemberCard yachts={yachts} allowAdminRole={allowAdminRole} />
+            <CrewAddMemberCard yachts={yachts} allowCaptainRole={allowCaptainRole} />
           </div>
         ) : null}
 

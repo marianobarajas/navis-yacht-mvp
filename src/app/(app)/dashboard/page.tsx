@@ -9,7 +9,7 @@ import { DashboardSprintPlanning } from "@/components/DashboardSprintPlanning";
 import { DashboardCalendarPreview } from "@/components/DashboardCalendarPreview";
 import { MyYachtsWidget } from "@/components/MyYachtsWidget";
 import { CrewCard } from "@/components/CrewCard";
-import { crewPositionSortIndex } from "@/lib/crew";
+import { roleSortIndex } from "@/lib/crew";
 
 /** Frosted glass panels + lift on hover (dashboard hero only) — ring + stronger icon wells for contrast on photo */
 const GLASS_PANEL =
@@ -123,7 +123,7 @@ async function DashboardContent() {
     const aWork = a.shiftStatus === "ON_DUTY" || a.shiftStatus === "ACTIVE" ? 1 : 0;
     const bWork = b.shiftStatus === "ON_DUTY" || b.shiftStatus === "ACTIVE" ? 1 : 0;
     if (aWork !== bWork) return bWork - aWork;
-    return crewPositionSortIndex(a.crewPosition) - crewPositionSortIndex(b.crewPosition);
+    return roleSortIndex(a.role) - roleSortIndex(b.role);
   });
 
   return (

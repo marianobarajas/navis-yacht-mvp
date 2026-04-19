@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import type { CrewPosition, Role, ShiftStatus } from "@prisma/client";
+import type { Role, ShiftStatus } from "@prisma/client";
 import { CustomSelect } from "@/components/ui/CustomSelect";
-import { CrewPositionBadge, ShiftBadge } from "@/components/ui/Badge";
+import { RoleBadge, ShiftBadge } from "@/components/ui/Badge";
 import {
   EllipsisHorizontalIcon,
   MagnifyingGlassIcon,
@@ -13,14 +13,13 @@ import {
 } from "@/components/ui/Icons";
 import { CrewEditModal, type CrewEditUserLite } from "./CrewEditButton";
 import { deactivateUser } from "@/actions/users";
-import { CREW_POSITION_SELECT_OPTIONS, SHIFT_STATUS_SELECT_OPTIONS } from "@/lib/crew";
+import { ROLE_SELECT_OPTIONS, SHIFT_STATUS_SELECT_OPTIONS } from "@/lib/crew";
 
 export type CrewTableRow = {
   id: string;
   name: string;
   email: string;
   role: Role;
-  crewPosition: CrewPosition;
   shiftStatus: ShiftStatus;
   isActive: boolean;
   profileImage: string | null;
@@ -63,7 +62,6 @@ function CrewRowActions({
     name: user.name,
     email: user.email,
     role: user.role,
-    crewPosition: user.crewPosition,
     shiftStatus: user.shiftStatus,
     isActive: user.isActive,
   };
@@ -122,12 +120,7 @@ function CrewRowActions({
         </div>
       ) : null}
 
-      <CrewEditModal
-        user={editUser}
-        open={editOpen}
-        onClose={() => setEditOpen(false)}
-        actorRole={actorRole}
-      />
+      <CrewEditModal user={editUser} open={editOpen} onClose={() => setEditOpen(false)} actorRole={actorRole} />
     </div>
   );
 }
@@ -165,7 +158,7 @@ export function CrewMembersTable({
   const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
 
-  const position = searchParams.get("position") ?? "";
+  const roleFilter = searchParams.get("role") ?? "";
   const status = searchParams.get("status") ?? "";
   const yachtId = searchParams.get("yachtId") ?? "";
 
@@ -201,9 +194,9 @@ export function CrewMembersTable({
     ...yachts.map((y) => ({ value: y.id, label: y.name })),
   ];
 
-  const positionFilterOptions = [
-    { value: "", label: "All positions" },
-    ...CREW_POSITION_SELECT_OPTIONS,
+  const roleFilterOptions = [
+    { value: "", label: "All roles" },
+    ...ROLE_SELECT_OPTIONS,
   ];
 
   return (
@@ -233,11 +226,11 @@ export function CrewMembersTable({
             />
           </div>
           <CustomSelect
-            value={position}
-            onChange={(v) => setParam("position", v)}
-            placeholder="Filter by position"
+            value={roleFilter}
+            onChange={(v) => setParam("role", v)}
+            placeholder="Filter by role"
             className="min-w-[170px]"
-            options={positionFilterOptions}
+            options={roleFilterOptions}
           />
           <CustomSelect
             value={yachtId}
@@ -262,7 +255,7 @@ export function CrewMembersTable({
             <tr className="border-b border-[var(--apple-border)] bg-[var(--apple-bg-subtle)]/80">
               <th className="px-4 py-3 font-semibold text-[var(--apple-text-secondary)]">Name</th>
               <th className="px-4 py-3 font-semibold text-[var(--apple-text-secondary)]">Email</th>
-              <th className="px-4 py-3 font-semibold text-[var(--apple-text-secondary)]">Position</th>
+              <th className="px-4 py-3 font-semibold text-[var(--apple-text-secondary)]">Role</th>
               <th className="px-4 py-3 font-semibold text-[var(--apple-text-secondary)]">Account</th>
               <th className="px-4 py-3 font-semibold text-[var(--apple-text-secondary)]">Crew status</th>
               <th className="px-4 py-3 pr-6 text-right font-semibold text-[var(--apple-text-secondary)]">
@@ -291,7 +284,7 @@ export function CrewMembersTable({
                   </td>
                   <td className="px-4 py-3 text-[var(--apple-text-secondary)]">{row.email}</td>
                   <td className="px-4 py-3">
-                    <CrewPositionBadge position={row.crewPosition} />
+                    <RoleBadge role={row.role} />
                   </td>
                   <td className="px-4 py-3">
                     {row.isActive ? (

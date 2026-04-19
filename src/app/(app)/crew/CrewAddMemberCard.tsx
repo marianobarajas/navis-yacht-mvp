@@ -5,27 +5,17 @@ import { useRouter } from "next/navigation";
 import { createUser, sendUserInvite } from "@/actions/users";
 import { CustomSelect } from "@/components/ui/CustomSelect";
 import { ChevronDownIcon, UserPlusIcon } from "@/components/ui/Icons";
-import { CREW_POSITION_SELECT_OPTIONS } from "@/lib/crew";
+import { ROLE_SELECT_OPTIONS } from "@/lib/crew";
 
 type YachtOption = { id: string; name: string };
 
-const ROLE_OPTIONS_CREW_MEMBER = [
-  { value: "TECHNICIAN", label: "Crew" },
-  { value: "MANAGER", label: "Member" },
-] as const;
-
-const ROLE_OPTIONS_ALL = [
-  { value: "TECHNICIAN", label: "Crew" },
-  { value: "MANAGER", label: "Member" },
-  { value: "ADMIN", label: "Admin" },
-] as const;
-
 export function CrewAddMemberCard({
   yachts,
-  allowAdminRole,
+  allowCaptainRole,
 }: {
   yachts: YachtOption[];
-  allowAdminRole: boolean;
+  /** Only Captains can invite or create another Captain. */
+  allowCaptainRole: boolean;
 }) {
   const router = useRouter();
 
@@ -33,6 +23,10 @@ export function CrewAddMemberCard({
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
+
+  const roleOptions = allowCaptainRole
+    ? ROLE_SELECT_OPTIONS
+    : ROLE_SELECT_OPTIONS.filter((o) => o.value !== "CAPTAIN");
 
   function submitWith(
     fn: (fd: FormData) => Promise<{
@@ -83,8 +77,6 @@ export function CrewAddMemberCard({
     { value: "", label: "Select yacht (optional)" },
     ...yachts.map((y) => ({ value: y.id, label: y.name })),
   ];
-
-  const roleOptions = allowAdminRole ? [...ROLE_OPTIONS_ALL] : [...ROLE_OPTIONS_CREW_MEMBER];
 
   return (
     <div
@@ -159,20 +151,11 @@ export function CrewAddMemberCard({
               />
             </div>
             <div className="grid gap-1">
-              <label className="text-xs font-medium text-[var(--apple-text-secondary)]">App access</label>
+              <label className="text-xs font-medium text-[var(--apple-text-secondary)]">Role</label>
               <CustomSelect
                 name="role"
-                defaultValue="TECHNICIAN"
-                options={roleOptions}
-                triggerClassName="bg-[var(--apple-bg-elevated)] !h-10 !py-0 text-sm"
-              />
-            </div>
-            <div className="grid gap-1 sm:col-span-2">
-              <label className="text-xs font-medium text-[var(--apple-text-secondary)]">Position</label>
-              <CustomSelect
-                name="crewPosition"
                 defaultValue="DECKHAND_1_2"
-                options={CREW_POSITION_SELECT_OPTIONS}
+                options={roleOptions}
                 triggerClassName="bg-[var(--apple-bg-elevated)] !h-10 !py-0 text-sm"
               />
             </div>

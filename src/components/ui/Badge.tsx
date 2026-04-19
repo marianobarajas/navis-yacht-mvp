@@ -1,6 +1,6 @@
 import type { Priority, WorkOrderStatus } from "@prisma/client";
-import type { CrewPosition, ShiftStatus } from "@prisma/client";
-import { CREW_POSITION_LABELS, SHIFT_STATUS_LABELS } from "@/lib/crew";
+import type { Role, ShiftStatus } from "@prisma/client";
+import { ROLE_LABELS, SHIFT_STATUS_LABELS } from "@/lib/crew";
 
 const priorityStyles: Record<Priority, string> = {
   LOW: "bg-[rgba(196,140,114,0.32)] text-[#8b6048]",
@@ -17,7 +17,6 @@ const statusStyles: Record<WorkOrderStatus, string> = {
   CLOSED: "bg-[var(--apple-bg-subtle)] text-[var(--apple-text-tertiary)]",
 };
 
-/** High-contrast chips for dark / glass panels */
 const shiftStyles: Record<ShiftStatus, string> = {
   ACTIVE:
     "border border-emerald-400/55 bg-emerald-950/65 text-emerald-50 shadow-sm",
@@ -28,7 +27,7 @@ const shiftStyles: Record<ShiftStatus, string> = {
   STANDBY: "border border-slate-400/45 bg-slate-900/80 text-slate-100 shadow-sm",
 };
 
-const crewPositionStyles: Record<CrewPosition, string> = {
+const roleBadgeStyles: Record<Role, string> = {
   CAPTAIN:
     "border border-amber-400/60 bg-amber-950/70 text-amber-50 shadow-sm",
   CHIEF_ENGINEER:
@@ -73,28 +72,10 @@ export function ShiftBadge({ status }: { status: ShiftStatus }) {
   );
 }
 
-/** App permission role (ADMIN / MANAGER / TECHNICIAN) — admin screens only */
-export function RoleBadge({ role }: { role: string }) {
-  const permissionStyles: Record<string, string> = {
-    ADMIN: "border border-rose-400/45 bg-rose-950/65 text-rose-50",
-    MANAGER: "border border-teal-400/45 bg-teal-950/65 text-teal-50",
-    TECHNICIAN: "border border-emerald-400/45 bg-emerald-950/65 text-emerald-50",
-  };
-  const label =
-    role === "ADMIN" ? "Admin" : role === "MANAGER" ? "Member" : role === "TECHNICIAN" ? "Crew" : role;
+export function RoleBadge({ role }: { role: Role }) {
   return (
-    <span
-      className={`${baseBadge} ${permissionStyles[role] ?? "border border-white/20 bg-zinc-900/80 text-zinc-100"}`}
-    >
-      {label}
-    </span>
-  );
-}
-
-export function CrewPositionBadge({ position }: { position: CrewPosition }) {
-  return (
-    <span className={`${baseBadge} ${crewPositionStyles[position]}`}>
-      {CREW_POSITION_LABELS[position]}
+    <span className={`${baseBadge} ${roleBadgeStyles[role]}`}>
+      {ROLE_LABELS[role]}
     </span>
   );
 }

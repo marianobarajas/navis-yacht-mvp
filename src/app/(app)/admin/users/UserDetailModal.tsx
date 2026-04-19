@@ -14,8 +14,9 @@ import {
 import { XIcon, PlusIcon } from "@/components/ui/Icons";
 import { CustomSelect } from "@/components/ui/CustomSelect";
 import Link from "next/link";
-import { canAssignYacht } from "@/lib/rbac";
-import { CREW_POSITION_LABELS, SHIFT_STATUS_LABELS } from "@/lib/crew";
+import { canAssignYacht, canEditUserRole, isManagerOrAbove } from "@/lib/rbac";
+import { ROLE_LABELS, SHIFT_STATUS_LABELS } from "@/lib/crew";
+import type { Role } from "@prisma/client";
 
 const ALL_PERMISSIONS: { id: string; label: string }[] = [
   { id: "all_permissions", label: "All permissions" },
@@ -31,10 +32,19 @@ const ALL_PERMISSIONS: { id: string; label: string }[] = [
   { id: "view_documents_assigned_yachts", label: "View documents for assigned yachts" },
 ];
 
+const PERM_CAPTAIN = ["all_permissions", "manage_users_yachts", "create_assign_tasks", "full_system_access"];
+const PERM_MANAGER = ["manage_yachts_crew", "create_assign_tasks", "view_all_logs_documents", "manage_team_members"];
+const PERM_CREW = ["view_assigned_yachts", "create_logs", "update_task_status", "view_documents_assigned_yachts"];
+
 const ROLE_DEFAULT_PERMISSIONS: Record<string, string[]> = {
-  ADMIN: ["all_permissions", "manage_users_yachts", "create_assign_tasks", "full_system_access"],
-  MANAGER: ["manage_yachts_crew", "create_assign_tasks", "view_all_logs_documents", "manage_team_members"],
-  TECHNICIAN: ["view_assigned_yachts", "create_logs", "update_task_status", "view_documents_assigned_yachts"],
+  CAPTAIN: PERM_CAPTAIN,
+  CHIEF_ENGINEER: PERM_MANAGER,
+  FIRST_MATE: PERM_MANAGER,
+  BOSUN: PERM_MANAGER,
+  DECKHAND_1_2: PERM_CREW,
+  CHEF: PERM_CREW,
+  CHIEF_STEWARDESS: PERM_CREW,
+  STEWARDESS_1_2: PERM_CREW,
 };
 
 function getDefaultForRole(role: string): Record<string, boolean> {
@@ -58,8 +68,7 @@ export function UserDetailModal({
     id: string;
     name: string;
     email: string;
-    role: string;
-    crewPosition?: string;
+    role: Role;
     isActive: boolean;
     shiftStatus?: string;
     permissionOverrides?: Record<string, boolean> | null;
@@ -116,12 +125,12 @@ export function UserDetailModal({
     return () => { cancelled = true; };
   }, [data, actorRole]);
 
-  const canEdit = data && (data.role !== "ADMIN" || actorRole === "ADMIN");
-  const canEditPermissions = data && (actorRole === "ADMIN" || actorRole === "MANAGER") && (data.role !== "ADMIN" || actorRole === "ADMIN");
-  const canModifyLifecycle =
-    data && (data.role !== "ADMIN" || actorRole === "ADMIN") && data.id !== actorUserId;
+  const ar = actorRole as Role;
+  const canEdit = data && canEditUserRole(ar, data.role);
+  const canEditPermissions = data && isManagerOrAbove(actorRole) && canEditUserRole(ar, data.role);
+  const canModifyLifecycle = data && canEditUserRole(ar, data.role) && data.id !== actorUserId;
   const canAssign = data && canAssignYacht(actorRole);
-  const canResetPwd = data && (actorRole === "ADMIN" || actorRole === "MANAGER") && (data.role !== "ADMIN" || actorRole === "ADMIN");
+  const canResetPwd = data && isManagerOrAbove(actorRole) && canEditUserRole(ar, data.role);
 
   const roleDefaults = data ? getDefaultForRole(data.role) : {};
   const permissionOverrides = data?.permissionOverrides ?? {};
@@ -238,7 +247,6 @@ export function UserDetailModal({
                       name: data.name,
                       email: data.email,
                       role: data.role,
-                      crewPosition: data.crewPosition,
                       shiftStatus: data.shiftStatus,
                       isActive: data.isActive,
                     }}
@@ -250,8 +258,7 @@ export function UserDetailModal({
                   <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
                     <div><span className="block text-[10px] font-medium text-[var(--apple-text-tertiary)]">Name</span><p className="font-medium text-[var(--apple-text-primary)]">{data.name}</p></div>
                     <div><span className="block text-[10px] font-medium text-[var(--apple-text-tertiary)]">Email</span><p className="truncate font-medium text-[var(--apple-text-primary)]" title={data.email}>{data.email}</p></div>
-                    <div><span className="block text-[10px] font-medium text-[var(--apple-text-tertiary)]">App role</span><p className="font-medium text-[var(--apple-text-primary)]">{data.role}</p></div>
-                    <div><span className="block text-[10px] font-medium text-[var(--apple-text-tertiary)]">Position</span><p className="font-medium text-[var(--apple-text-primary)]">{data.crewPosition ? CREW_POSITION_LABELS[data.crewPosition as keyof typeof CREW_POSITION_LABELS] : "—"}</p></div>
+                    <div><span className="block text-[10px] font-medium text-[var(--apple-text-tertiary)]">Role</span><p className="font-medium text-[var(--apple-text-primary)]">{ROLE_LABELS[data.role]}</p></div>
                     <div><span className="block text-[10px] font-medium text-[var(--apple-text-tertiary)]">Crew status</span><p className="font-medium text-[var(--apple-text-primary)]">{data.shiftStatus ? SHIFT_STATUS_LABELS[data.shiftStatus as keyof typeof SHIFT_STATUS_LABELS] : "—"}</p></div>
                     <div><span className="block text-[10px] font-medium text-[var(--apple-text-tertiary)]">Active</span><p className="font-medium text-[var(--apple-text-primary)]">{data.isActive ? "Yes" : "No"}</p></div>
                   </div>

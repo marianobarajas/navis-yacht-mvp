@@ -5,19 +5,30 @@ import { useRouter } from "next/navigation";
 import { updateUser } from "@/actions/users";
 import { CheckIcon, XIcon } from "@/components/ui/Icons";
 import { CustomSelect } from "@/components/ui/CustomSelect";
-import { CREW_POSITION_SELECT_OPTIONS, SHIFT_STATUS_SELECT_OPTIONS } from "@/lib/crew";
+import { ROLE_SELECT_OPTIONS, SHIFT_STATUS_SELECT_OPTIONS } from "@/lib/crew";
+import type { Role } from "@prisma/client";
+import { isCaptain } from "@/lib/rbac";
 
 type UserForEdit = {
   id: string;
   name: string;
   email: string;
-  role: string;
-  crewPosition?: string;
+  role: Role;
   shiftStatus?: string;
   isActive: boolean;
 };
 
-export function UserEditForm({ user, actorRole, onClose, compact }: { user: UserForEdit; actorRole: string; onClose: () => void; compact?: boolean }) {
+export function UserEditForm({
+  user,
+  actorRole,
+  onClose,
+  compact,
+}: {
+  user: UserForEdit;
+  actorRole: string;
+  onClose: () => void;
+  compact?: boolean;
+}) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -27,6 +38,8 @@ export function UserEditForm({ user, actorRole, onClose, compact }: { user: User
   const roleShiftStatusClass =
     "border-[var(--apple-accent)]/50 bg-[var(--apple-bg-subtle)]/80 font-medium shadow-sm hover:border-[var(--apple-accent)] focus:ring-2 focus:ring-[var(--apple-accent-muted)]";
 
+  const roleOptions = isCaptain(actorRole) ? ROLE_SELECT_OPTIONS : ROLE_SELECT_OPTIONS.filter((o) => o.value !== "CAPTAIN");
+
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
@@ -35,19 +48,14 @@ export function UserEditForm({ user, actorRole, onClose, compact }: { user: User
 
     startTransition(async () => {
       const res = await updateUser(user.id, formData);
-      if ((res as any)?.error) {
-        setError((res as any).error);
+      if ((res as { error?: string })?.error) {
+        setError((res as { error: string }).error);
         return;
       }
       router.refresh();
       onClose();
     });
   }
-
-  const roleOptions =
-    actorRole === "ADMIN"
-      ? [{ value: "ADMIN", label: "ADMIN" }, { value: "MANAGER", label: "MANAGER" }, { value: "TECHNICIAN", label: "TECHNICIAN" }]
-      : [{ value: "MANAGER", label: "MANAGER" }, { value: "TECHNICIAN", label: "TECHNICIAN" }];
 
   return (
     <form onSubmit={onSubmit} className={compact ? `grid grid-cols-2 gap-x-3 gap-y-1.5` : `grid ${gap}`}>
@@ -62,18 +70,8 @@ export function UserEditForm({ user, actorRole, onClose, compact }: { user: User
             <input name="email" type="email" required defaultValue={user.email} className={inputClass} placeholder="email@example.com" />
           </div>
           <div className="grid gap-0.5">
-            <label className={`${labelClass} font-semibold text-[var(--apple-text-primary)]`}>App role</label>
+            <label className={`${labelClass} font-semibold text-[var(--apple-text-primary)]`}>Role</label>
             <CustomSelect name="role" defaultValue={user.role} options={roleOptions} triggerClassName={roleShiftStatusClass} emphasizeValue />
-          </div>
-          <div className="grid gap-0.5">
-            <label className={`${labelClass} font-semibold text-[var(--apple-text-primary)]`}>Position</label>
-            <CustomSelect
-              name="crewPosition"
-              defaultValue={user.crewPosition ?? "DECKHAND_1_2"}
-              options={CREW_POSITION_SELECT_OPTIONS}
-              triggerClassName={roleShiftStatusClass}
-              emphasizeValue
-            />
           </div>
           <div className="grid gap-0.5">
             <label className={`${labelClass} font-semibold text-[var(--apple-text-primary)]`}>Crew status</label>
@@ -102,18 +100,8 @@ export function UserEditForm({ user, actorRole, onClose, compact }: { user: User
             <input name="email" type="email" required defaultValue={user.email} className={inputClass} placeholder="email@example.com" />
           </div>
           <div className="grid gap-1">
-            <label className={`${labelClass} font-semibold text-[var(--apple-text-primary)]`}>App role</label>
+            <label className={`${labelClass} font-semibold text-[var(--apple-text-primary)]`}>Role</label>
             <CustomSelect name="role" defaultValue={user.role} options={roleOptions} triggerClassName={roleShiftStatusClass} emphasizeValue />
-          </div>
-          <div className="grid gap-1">
-            <label className={`${labelClass} font-semibold text-[var(--apple-text-primary)]`}>Position</label>
-            <CustomSelect
-              name="crewPosition"
-              defaultValue={user.crewPosition ?? "DECKHAND_1_2"}
-              options={CREW_POSITION_SELECT_OPTIONS}
-              triggerClassName={roleShiftStatusClass}
-              emphasizeValue
-            />
           </div>
           <div className="grid gap-1">
             <label className={`${labelClass} font-semibold text-[var(--apple-text-primary)]`}>Crew status</label>

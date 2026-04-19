@@ -60,7 +60,7 @@ export async function getYachtById(id: string) {
     include: {
       assignments: {
         include: {
-          user: { select: { id: true, name: true, email: true, role: true, crewPosition: true } },
+          user: { select: { id: true, name: true, email: true, role: true } },
         },
       },
     },

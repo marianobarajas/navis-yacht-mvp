@@ -5,16 +5,12 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { hash, compare } from "bcryptjs";
-import { canAssignYacht, canCreateUser } from "@/lib/rbac";
+import { canAssignYacht, canAssignRole, canCreateUser, canEditUserRole, isCaptain, isManagerOrAbove } from "@/lib/rbac";
 import { sendInviteEmail } from "@/lib/mail";
-import type { CrewPosition, Role, ShiftStatus } from "@prisma/client";
-import { CREW_POSITION_ORDER, SHIFT_STATUS_ORDER } from "@/lib/crew";
+import type { Role, ShiftStatus } from "@prisma/client";
+import { ROLE_ORDER, SHIFT_STATUS_ORDER } from "@/lib/crew";
 import { revalidatePath } from "next/cache";
 import { requireOrganizationId } from "@/lib/organization";
-
-function canManageUsers(role: Role) {
-  return role === "ADMIN" || role === "MANAGER";
-}
 
 export async function listUsers() {
   const session = await getServerSession(authOptions);
@@ -24,7 +20,7 @@ export async function listUsers() {
   if (!organizationId) return { error: "Unauthorized", data: null };
 
   const role = session.user.role as Role;
-  if (!canManageUsers(role)) return { error: "Forbidden", data: null };
+  if (!isManagerOrAbove(role)) return { error: "Forbidden", data: null };
 
   const users = await prisma.user.findMany({
     where: { organizationId },
@@ -34,7 +30,6 @@ export async function listUsers() {
       name: true,
       email: true,
       role: true,
-      crewPosition: true,
       isActive: true,
       shiftStatus: true,
       createdAt: true,
@@ -45,7 +40,7 @@ export async function listUsers() {
 }
 
 export async function listCrew(filters?: {
-  crewPosition?: string;
+  role?: string;
   shiftStatus?: string;
   includeInactive?: boolean;
 }) {
@@ -58,14 +53,13 @@ export async function listCrew(filters?: {
   const where: {
     organizationId: string;
     isActive?: boolean;
-    crewPosition?: CrewPosition;
+    role?: Role;
     shiftStatus?: ShiftStatus;
   } = { organizationId };
 
-  // Por default: solo activos
   if (!filters?.includeInactive) where.isActive = true;
 
-  if (filters?.crewPosition) where.crewPosition = filters.crewPosition as CrewPosition;
+  if (filters?.role) where.role = filters.role as Role;
   if (filters?.shiftStatus) where.shiftStatus = filters.shiftStatus as ShiftStatus;
 
   const users = await prisma.user.findMany({
@@ -76,9 +70,8 @@ export async function listCrew(filters?: {
       name: true,
       email: true,
       role: true,
-      crewPosition: true,
       shiftStatus: true,
-      isActive: true, // ✅ NECESARIO si vas a editar/mostrar activo/inactivo
+      isActive: true,
       profileImage: true,
       _count: { select: { assignmentsAsUser: true } },
       assignmentsAsUser: {
@@ -100,7 +93,7 @@ export async function getUserWithAssignments(userId: string) {
   if (!organizationId) return { error: "Unauthorized", data: null };
 
   const role = session.user.role as Role;
-  if (!canManageUsers(role)) return { error: "Forbidden", data: null };
+  if (!isManagerOrAbove(role)) return { error: "Forbidden", data: null };
 
   const user = await prisma.user.findFirst({
     where: { id: userId, organizationId },
@@ -109,7 +102,6 @@ export async function getUserWithAssignments(userId: string) {
       name: true,
       email: true,
       role: true,
-      crewPosition: true,
       isActive: true,
       shiftStatus: true,
       permissionOverrides: true,
@@ -138,7 +130,6 @@ export async function getCurrentUserProfile() {
       name: true,
       email: true,
       role: true,
-      crewPosition: true,
       isActive: true,
       shiftStatus: true,
       permissionOverrides: true,
@@ -227,11 +218,10 @@ export async function createUser(formData: FormData) {
   const roleInput = String(formData.get("role") ?? "").trim();
   const role = roleInput as Role;
 
-  if (!name || !email || !password || !role) return { error: "Missing fields" };
+  if (!name || !email || !password || !roleInput) return { error: "Missing fields" };
 
-  const allowedRoles: Role[] =
-    myRole === "ADMIN" ? ["ADMIN", "MANAGER", "TECHNICIAN"] : ["MANAGER", "TECHNICIAN"];
-  if (!allowedRoles.includes(role)) return { error: "Invalid role for your account" };
+  if (!ROLE_ORDER.includes(role)) return { error: "Invalid role" };
+  if (!canAssignRole(myRole, role)) return { error: "Forbidden" };
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) return { error: "Email already in use" };
@@ -239,18 +229,12 @@ export async function createUser(formData: FormData) {
   const passwordHash = await hash(password, 10);
   const initialYachtId = String(formData.get("initialYachtId") ?? "").trim();
 
-  const crewPositionRaw = String(formData.get("crewPosition") ?? "").trim();
-  const crewPosition = CREW_POSITION_ORDER.includes(crewPositionRaw as CrewPosition)
-    ? (crewPositionRaw as CrewPosition)
-    : ("DECKHAND_1_2" as CrewPosition);
-
   const created = await prisma.user.create({
     data: {
       name,
       email,
       passwordHash,
       role,
-      crewPosition,
       organizationId,
       isPlatformAdmin: false,
     },
@@ -287,7 +271,7 @@ export async function deactivateUser(userId: string) {
   if (!organizationId) return { error: "Unauthorized" };
 
   const myRole = session.user.role as Role;
-  if (!canManageUsers(myRole)) return { error: "Forbidden" };
+  if (!isManagerOrAbove(myRole)) return { error: "Forbidden" };
 
   const target = await prisma.user.findFirst({
     where: { id: userId, organizationId },
@@ -295,9 +279,8 @@ export async function deactivateUser(userId: string) {
   });
   if (!target) return { error: "User not found" };
 
-  // Manager no puede desactivar Admin
-  if (target.role === "ADMIN" && myRole !== "ADMIN") {
-    return { error: "Only ADMIN can deactivate ADMIN users" };
+  if (target.role === "CAPTAIN" && !isCaptain(myRole)) {
+    return { error: "Only a Captain can deactivate another Captain" };
   }
 
   await prisma.user.update({
@@ -322,7 +305,7 @@ export async function deleteUserPermanently(userId: string) {
   if (!organizationId) return { error: "Unauthorized" };
 
   const myRole = session.user.role as Role;
-  if (!canManageUsers(myRole)) return { error: "Forbidden" };
+  if (!isManagerOrAbove(myRole)) return { error: "Forbidden" };
 
   const actorId = session.user.id;
   if (userId === actorId) return { error: "You cannot delete your own account" };
@@ -333,15 +316,15 @@ export async function deleteUserPermanently(userId: string) {
   });
   if (!target) return { error: "User not found" };
 
-  if (target.role === "ADMIN" && myRole !== "ADMIN") {
-    return { error: "Only ADMIN can delete ADMIN users" };
+  if (target.role === "CAPTAIN" && !isCaptain(myRole)) {
+    return { error: "Only a Captain can delete another Captain" };
   }
 
-  if (target.role === "ADMIN") {
-    const otherAdmins = await prisma.user.count({
-      where: { role: "ADMIN", id: { not: userId }, organizationId },
+  if (target.role === "CAPTAIN") {
+    const otherCaptains = await prisma.user.count({
+      where: { role: "CAPTAIN", id: { not: userId }, organizationId },
     });
-    if (otherAdmins === 0) return { error: "Cannot delete the last administrator" };
+    if (otherCaptains === 0) return { error: "Cannot delete the last Captain" };
   }
 
   try {
@@ -387,7 +370,7 @@ export async function reactivateUser(userId: string) {
   if (!organizationId) return { error: "Unauthorized" };
 
   const myRole = session.user.role as Role;
-  if (!canManageUsers(myRole)) return { error: "Forbidden" };
+  if (!isManagerOrAbove(myRole)) return { error: "Forbidden" };
 
   const target = await prisma.user.findFirst({
     where: { id: userId, organizationId },
@@ -395,9 +378,8 @@ export async function reactivateUser(userId: string) {
   });
   if (!target) return { error: "User not found" };
 
-  // Manager no puede “revivir” Admin si no es Admin (por simetría)
-  if (target.role === "ADMIN" && myRole !== "ADMIN") {
-    return { error: "Only ADMIN can reactivate ADMIN users" };
+  if (target.role === "CAPTAIN" && !isCaptain(myRole)) {
+    return { error: "Only a Captain can reactivate another Captain" };
   }
 
   await prisma.user.update({
@@ -410,10 +392,6 @@ export async function reactivateUser(userId: string) {
   return { error: null };
 }
 
-/**
- * ✅ Este es el que te faltaba para EDITAR desde /crew
- * Permite cambiar: name, role, shiftStatus, isActive, email
- */
 export async function updateUser(userId: string, formData: FormData) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { error: "Unauthorized" };
@@ -421,32 +399,23 @@ export async function updateUser(userId: string, formData: FormData) {
   const organizationId = requireOrganizationId(session);
   if (!organizationId) return { error: "Unauthorized" };
 
-  const actorRole = (session.user as any).role as Role;
-  if (actorRole !== "ADMIN" && actorRole !== "MANAGER") return { error: "Forbidden" };
+  const actorRole = (session.user as { role?: Role }).role as Role;
+  if (!isManagerOrAbove(actorRole)) return { error: "Forbidden" };
 
   const name = String(formData.get("name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const roleInput = String(formData.get("role") ?? "").trim() as Role;
   const shiftStatusRaw = String(formData.get("shiftStatus") ?? "").trim();
-  const crewPositionRaw = String(formData.get("crewPosition") ?? "").trim();
   const isActiveRaw = String(formData.get("isActive") ?? "true").trim();
 
   if (!name || !email) return { error: "Name and email are required" };
 
-  const allowedRoles: Role[] = actorRole === "ADMIN"
-    ? ["ADMIN", "MANAGER", "TECHNICIAN"]
-    : ["MANAGER", "TECHNICIAN"]; // MANAGER no puede hacer admins
-
-  if (!allowedRoles.includes(roleInput)) return { error: "Invalid role" };
+  if (!ROLE_ORDER.includes(roleInput)) return { error: "Invalid role" };
+  if (!canAssignRole(actorRole, roleInput)) return { error: "Forbidden" };
 
   const allowedShift = [...SHIFT_STATUS_ORDER];
   if (!shiftStatusRaw || !allowedShift.includes(shiftStatusRaw as ShiftStatus)) return { error: "Invalid shift status" };
   const shiftStatus = shiftStatusRaw as ShiftStatus;
-
-  if (!crewPositionRaw || !CREW_POSITION_ORDER.includes(crewPositionRaw as CrewPosition)) {
-    return { error: "Invalid crew position" };
-  }
-  const crewPosition = crewPositionRaw as CrewPosition;
 
   const target = await prisma.user.findFirst({
     where: { id: userId, organizationId },
@@ -454,12 +423,8 @@ export async function updateUser(userId: string, formData: FormData) {
   });
   if (!target) return { error: "User not found" };
 
-  // Solo ADMIN puede tocar ADMINs
-  if (target.role === "ADMIN" && actorRole !== "ADMIN") {
-    return { error: "Only ADMIN can edit ADMIN users" };
-  }
+  if (!canEditUserRole(actorRole, target.role)) return { error: "Forbidden" };
 
-  // Evitar emails duplicados
   if (email !== target.email) {
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) return { error: "Email already in use" };
@@ -475,7 +440,6 @@ export async function updateUser(userId: string, formData: FormData) {
       role: roleInput,
       shiftStatus,
       isActive,
-      crewPosition,
     },
   });
 
@@ -492,7 +456,7 @@ export async function resetUserPassword(userId: string, newPassword: string) {
   if (!organizationId) return { error: "Unauthorized" };
 
   const myRole = session.user.role as Role;
-  if (myRole !== "ADMIN" && myRole !== "MANAGER") return { error: "Forbidden" };
+  if (!isManagerOrAbove(myRole)) return { error: "Forbidden" };
 
   const target = await prisma.user.findFirst({
     where: { id: userId, organizationId },
@@ -500,8 +464,8 @@ export async function resetUserPassword(userId: string, newPassword: string) {
   });
   if (!target) return { error: "User not found" };
 
-  if (target.role === "ADMIN" && myRole !== "ADMIN") {
-    return { error: "Only ADMIN can reset ADMIN passwords" };
+  if (target.role === "CAPTAIN" && !isCaptain(myRole)) {
+    return { error: "Only a Captain can reset another Captain's password" };
   }
 
   const password = String(newPassword).trim();
@@ -530,14 +494,14 @@ export async function updateUserPermissionOverrides(
   if (!organizationId) return { error: "Unauthorized" };
 
   const myRole = session.user.role as Role;
-  if (myRole !== "ADMIN" && myRole !== "MANAGER") return { error: "Forbidden" };
+  if (!isManagerOrAbove(myRole)) return { error: "Forbidden" };
 
   const target = await prisma.user.findFirst({
     where: { id: userId, organizationId },
     select: { id: true, role: true },
   });
   if (!target) return { error: "User not found" };
-  if (target.role === "ADMIN" && myRole !== "ADMIN") return { error: "Cannot edit ADMIN permissions" };
+  if (target.role === "CAPTAIN" && !isCaptain(myRole)) return { error: "Cannot edit a Captain's permissions" };
 
   await prisma.user.update({
     where: { id: userId },
@@ -575,11 +539,10 @@ export async function sendUserInvite(formData: FormData) {
   const role = roleInput as Role;
   const initialYachtId = String(formData.get("initialYachtId") ?? "").trim();
 
-  if (!name || !email || !role) return { error: "Missing fields" };
+  if (!name || !email || !roleInput) return { error: "Missing fields" };
 
-  const allowedRoles: Role[] =
-    myRole === "ADMIN" ? ["ADMIN", "MANAGER", "TECHNICIAN"] : ["MANAGER", "TECHNICIAN"];
-  if (!allowedRoles.includes(role)) return { error: "Invalid role for your account" };
+  if (!ROLE_ORDER.includes(role)) return { error: "Invalid role" };
+  if (!canAssignRole(myRole, role)) return { error: "Forbidden" };
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) return { error: "Email already in use" };
@@ -587,18 +550,12 @@ export async function sendUserInvite(formData: FormData) {
   const inviteToken = randomBytes(32).toString("hex");
   const placeholderPassword = await hash(randomBytes(32).toString("hex"), 10);
 
-  const crewPositionRaw = String(formData.get("crewPosition") ?? "").trim();
-  const crewPosition = CREW_POSITION_ORDER.includes(crewPositionRaw as CrewPosition)
-    ? (crewPositionRaw as CrewPosition)
-    : ("DECKHAND_1_2" as CrewPosition);
-
   const created = await prisma.user.create({
     data: {
       name,
       email,
       passwordHash: placeholderPassword,
       role,
-      crewPosition,
       organizationId,
       isPlatformAdmin: false,
       inviteToken,

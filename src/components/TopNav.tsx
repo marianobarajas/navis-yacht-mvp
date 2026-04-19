@@ -6,6 +6,8 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { markNotificationRead } from "@/actions/notifications";
+import { ROLE_LABELS } from "@/lib/crew";
+import { isManagerOrAbove } from "@/lib/rbac";
 
 export type NavNotification = {
   id: string;
@@ -49,15 +51,9 @@ export function TopNav({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const roleLabel = platformMode
-    ? "Platform"
-    : (user as { role?: string })?.role === "ADMIN"
-      ? "Admin"
-      : (user as { role?: string })?.role === "MANAGER"
-        ? "Manager"
-        : (user as { role?: string })?.role === "TECHNICIAN"
-          ? "Technician"
-          : "User";
+  const r = (user as { role?: string })?.role;
+  const roleLabel =
+    platformMode ? "Platform" : r && r in ROLE_LABELS ? ROLE_LABELS[r as keyof typeof ROLE_LABELS] : "User";
   const profileImage = user?.profileImage ?? null;
 
   const headerSubtitle = platformMode ? "Platform" : organizationName?.trim() || null;
@@ -198,9 +194,7 @@ export function TopNav({
                 View Profile
               </Link>
             ) : null}
-            {!platformMode &&
-            ((user as { role?: string })?.role === "ADMIN" ||
-              (user as { role?: string })?.role === "MANAGER") ? (
+            {!platformMode && isManagerOrAbove((user as { role?: string })?.role) ? (
               <Link
                 href="/admin/users"
                 className="block px-4 py-2.5 text-sm text-[var(--apple-text-primary)] transition-colors hover:bg-[var(--apple-bg-subtle)]"

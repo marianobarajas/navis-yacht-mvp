@@ -43,7 +43,7 @@ export function AdminUsersTable({
         </thead>
         <tbody>
           {users.map((u) => {
-            const canModifyTarget = u.role !== "ADMIN" || actorRole === "ADMIN";
+            const canModifyTarget = u.role !== "CAPTAIN" || actorRole === "CAPTAIN";
             const canDeactivate = u.isActive && canModifyTarget && u.id !== actorUserId;
             const canReactivate = !u.isActive && canModifyTarget && u.id !== actorUserId;
             const canPermaDelete = canModifyTarget && u.id !== actorUserId;

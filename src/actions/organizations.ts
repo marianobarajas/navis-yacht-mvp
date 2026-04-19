@@ -59,7 +59,7 @@ export async function provisionOrganization(input: {
         name: adminName,
         email,
         passwordHash,
-        role: "ADMIN",
+        role: "CAPTAIN",
         organizationId: org.id,
         isPlatformAdmin: false,
       },
