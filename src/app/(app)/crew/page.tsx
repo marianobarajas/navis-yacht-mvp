@@ -20,7 +20,7 @@ export default async function CrewPage({
   const roleFilter = params.role ?? undefined;
   const status = params.status ?? undefined;
 
-  const sessionRole = (session.user as { role?: Role }).role ?? "DECKHAND_1_2";
+  const sessionRole = (session.user as { role?: Role }).role ?? "DECKHAND_1";
   const canManage = isManagerOrAbove(sessionRole);
   const allowCaptainRole = sessionRole === "CAPTAIN";
 

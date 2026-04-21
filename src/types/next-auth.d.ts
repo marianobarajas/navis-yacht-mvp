@@ -5,10 +5,12 @@ type FleetRole =
   | "CHIEF_ENGINEER"
   | "FIRST_MATE"
   | "BOSUN"
-  | "DECKHAND_1_2"
+  | "DECKHAND_1"
+  | "DECKHAND_2"
   | "CHEF"
   | "CHIEF_STEWARDESS"
-  | "STEWARDESS_1_2";
+  | "STEWARDESS_1"
+  | "STEWARDESS_2";
 
 declare module "next-auth" {
   interface Session {

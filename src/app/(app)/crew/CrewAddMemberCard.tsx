@@ -154,7 +154,7 @@ export function CrewAddMemberCard({
               <label className="text-xs font-medium text-[var(--apple-text-secondary)]">Role</label>
               <CustomSelect
                 name="role"
-                defaultValue="DECKHAND_1_2"
+                defaultValue="DECKHAND_1"
                 options={roleOptions}
                 triggerClassName="bg-[var(--apple-bg-elevated)] !h-10 !py-0 text-sm"
               />

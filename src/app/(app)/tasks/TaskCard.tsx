@@ -129,8 +129,7 @@ export function TaskCard({ wo }: TaskCardProps) {
             type="button"
             onClick={goComments}
             className="flex items-center gap-1 text-xs font-medium hover:text-[var(--apple-accent)]"
-            title="Open comments"
-            aria-label="Open comments section"
+            title="Open comments section"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
               <path
@@ -147,8 +146,7 @@ export function TaskCard({ wo }: TaskCardProps) {
             type="button"
             onClick={goComments}
             className="flex items-center gap-1 text-xs font-medium hover:text-[var(--apple-accent)]"
-            title="Open comments"
-            aria-label="Open comments section"
+            title="Open comments section"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
               <path

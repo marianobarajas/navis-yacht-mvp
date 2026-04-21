@@ -137,7 +137,7 @@ const order = await prisma.workOrder.findFirst({
         }}
       />
 
-      <div id="comments">
+      <div id="comments" className="scroll-mt-24">
         <TaskCommentsPanel
           workOrderId={order.id}
           comments={order.comments}

@@ -13,7 +13,7 @@ export function isManagerTier(role?: string): role is Role {
 }
 
 /** Deck & interior crew — task-focused access (assigned yachts, logs). */
-const CREW_TIER: Role[] = ["DECKHAND_1_2", "CHEF", "CHIEF_STEWARDESS", "STEWARDESS_1_2"];
+const CREW_TIER: Role[] = ["DECKHAND_1", "DECKHAND_2", "CHEF", "CHIEF_STEWARDESS", "STEWARDESS_1", "STEWARDESS_2"];
 
 export function isCrewTier(role?: string): role is Role {
   return role !== undefined && CREW_TIER.includes(role as Role);

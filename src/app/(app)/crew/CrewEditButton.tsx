@@ -37,7 +37,7 @@ export function CrewEditModal({
     () => ({
       name: user.name ?? "",
       email: user.email ?? "",
-      role: user.role ?? "DECKHAND_1_2",
+      role: user.role ?? "DECKHAND_1",
       shiftStatus: user.shiftStatus ?? "OFF_DUTY",
       isActive: user.isActive ?? true,
     }),

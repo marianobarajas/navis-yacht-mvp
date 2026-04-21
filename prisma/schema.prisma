@@ -14,10 +14,12 @@ enum Role {
   CHIEF_ENGINEER
   FIRST_MATE
   BOSUN
-  DECKHAND_1_2
+  DECKHAND_1
+  DECKHAND_2
   CHEF
   CHIEF_STEWARDESS
-  STEWARDESS_1_2
+  STEWARDESS_1
+  STEWARDESS_2
 }
 
 enum ShiftStatus {
@@ -83,7 +85,7 @@ model User {
   /// Set until the user completes invite; login blocked while non-null.
   inviteToken          String?   @unique
   inviteTokenExpiresAt DateTime?
-  role         Role        @default(DECKHAND_1_2)
+  role         Role        @default(DECKHAND_1)
   isActive     Boolean     @default(true)
   profileImage String?
   shiftStatus         ShiftStatus @default(OFF_DUTY)

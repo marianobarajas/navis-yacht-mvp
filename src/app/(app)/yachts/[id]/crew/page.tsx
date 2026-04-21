@@ -16,8 +16,8 @@ type Assignment = {
 
 function sortAssignmentsByRole(assignments: Assignment[]): Assignment[] {
   return [...assignments].sort((a, b) => {
-    const pa = a.user.role ?? "DECKHAND_1_2";
-    const pb = b.user.role ?? "DECKHAND_1_2";
+    const pa = a.user.role ?? "DECKHAND_1";
+    const pb = b.user.role ?? "DECKHAND_1";
     return roleSortIndex(pa) - roleSortIndex(pb);
   });
 }
@@ -26,7 +26,7 @@ function groupAssignmentsByRole(assignments: Assignment[]): { key: string; label
   const sorted = sortAssignmentsByRole(assignments);
   const groups: { key: string; label: string; items: Assignment[] }[] = [];
   for (const pos of ROLE_ORDER) {
-    const items = sorted.filter((a) => (a.user.role ?? "DECKHAND_1_2") === pos);
+    const items = sorted.filter((a) => (a.user.role ?? "DECKHAND_1") === pos);
     if (items.length > 0) {
       groups.push({ key: pos, label: ROLE_LABELS[pos], items });
     }

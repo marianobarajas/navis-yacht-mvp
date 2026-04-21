@@ -44,14 +44,18 @@ export function roleBorderLeftClass(role: string): string {
       return "border-l-teal-400";
     case "BOSUN":
       return "border-l-cyan-400";
-    case "DECKHAND_1_2":
+    case "DECKHAND_1":
       return "border-l-emerald-400";
+    case "DECKHAND_2":
+      return "border-l-emerald-300";
     case "CHEF":
       return "border-l-orange-400";
     case "CHIEF_STEWARDESS":
       return "border-l-violet-400";
-    case "STEWARDESS_1_2":
+    case "STEWARDESS_1":
       return "border-l-fuchsia-400";
+    case "STEWARDESS_2":
+      return "border-l-fuchsia-300";
     default:
       return "border-l-[var(--apple-border-strong)]";
   }

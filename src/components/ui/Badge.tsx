@@ -36,14 +36,18 @@ const roleBadgeStyles: Record<Role, string> = {
     "border border-teal-400/55 bg-teal-950/70 text-teal-50 shadow-sm",
   BOSUN:
     "border border-cyan-400/50 bg-cyan-950/65 text-cyan-50 shadow-sm",
-  DECKHAND_1_2:
+  DECKHAND_1:
     "border border-emerald-400/50 bg-emerald-950/65 text-emerald-50 shadow-sm",
+  DECKHAND_2:
+    "border border-emerald-300/50 bg-emerald-900/65 text-emerald-50 shadow-sm",
   CHEF:
     "border border-orange-400/55 bg-orange-950/70 text-orange-50 shadow-sm",
   CHIEF_STEWARDESS:
     "border border-violet-400/50 bg-violet-950/65 text-violet-100 shadow-sm",
-  STEWARDESS_1_2:
+  STEWARDESS_1:
     "border border-fuchsia-400/50 bg-fuchsia-950/65 text-fuchsia-100 shadow-sm",
+  STEWARDESS_2:
+    "border border-fuchsia-300/50 bg-fuchsia-900/65 text-fuchsia-100 shadow-sm",
 };
 
 const baseBadge =

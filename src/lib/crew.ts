@@ -5,10 +5,12 @@ export const ROLE_ORDER: Role[] = [
   "CHIEF_ENGINEER",
   "FIRST_MATE",
   "BOSUN",
-  "DECKHAND_1_2",
+  "DECKHAND_1",
+  "DECKHAND_2",
   "CHEF",
   "CHIEF_STEWARDESS",
-  "STEWARDESS_1_2",
+  "STEWARDESS_1",
+  "STEWARDESS_2",
 ];
 
 export const ROLE_LABELS: Record<Role, string> = {
@@ -16,10 +18,12 @@ export const ROLE_LABELS: Record<Role, string> = {
   CHIEF_ENGINEER: "Chief Engineer",
   FIRST_MATE: "First Mate",
   BOSUN: "Bosun",
-  DECKHAND_1_2: "1–2 Deckhands",
+  DECKHAND_1: "1 Deckhand",
+  DECKHAND_2: "2 Deckhands",
   CHEF: "Chef",
   CHIEF_STEWARDESS: "Chief Stewardess",
-  STEWARDESS_1_2: "1–2 Stewardess",
+  STEWARDESS_1: "1 Stewardness",
+  STEWARDESS_2: "2 Stewardness",
 };
 
 export const SHIFT_STATUS_ORDER: ShiftStatus[] = [

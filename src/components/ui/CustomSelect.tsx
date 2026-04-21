@@ -60,15 +60,10 @@ export function CustomSelect({
       }
       setOpen(false);
     }
-    function handleScroll() {
-      setOpen(false);
-    }
     if (open) {
       document.addEventListener("mousedown", handleClickOutside);
-      window.addEventListener("scroll", handleScroll, true);
       return () => {
         document.removeEventListener("mousedown", handleClickOutside);
-        window.removeEventListener("scroll", handleScroll, true);
       };
     }
   }, [open]);
