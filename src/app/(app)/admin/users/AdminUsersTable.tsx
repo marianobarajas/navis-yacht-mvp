@@ -8,6 +8,7 @@ import {
   ReactivateUserButton,
 } from "./UserLifecycleButtons";
 import { roleBorderLeftClass } from "@/lib/uiAccent";
+import { isCaptain } from "@/lib/rbac";
 
 type User = {
   id: string;
@@ -43,7 +44,7 @@ export function AdminUsersTable({
         </thead>
         <tbody>
           {users.map((u) => {
-            const canModifyTarget = u.role !== "CAPTAIN" || actorRole === "CAPTAIN";
+            const canModifyTarget = u.role !== "CAPTAIN" || isCaptain(actorRole);
             const canDeactivate = u.isActive && canModifyTarget && u.id !== actorUserId;
             const canReactivate = !u.isActive && canModifyTarget && u.id !== actorUserId;
             const canPermaDelete = canModifyTarget && u.id !== actorUserId;

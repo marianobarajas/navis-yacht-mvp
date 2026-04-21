@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { listUsers } from "@/actions/users";
 import { listYachts } from "@/actions/yachts";
-import { canCreateUser } from "@/lib/rbac";
+import { canCreateUser, isCaptain } from "@/lib/rbac";
 import { CrewAddMemberCard } from "../../crew/CrewAddMemberCard";
 import { AdminUsersTable } from "./AdminUsersTable";
 
@@ -36,7 +36,7 @@ export default async function AdminUsersPage() {
 
       {!res.error && canAddCrew ? (
         <div className="mt-6">
-          <CrewAddMemberCard yachts={yachts} allowCaptainRole={actorRole === "CAPTAIN"} />
+          <CrewAddMemberCard yachts={yachts} allowCaptainRole={isCaptain(actorRole)} />
         </div>
       ) : null}
 

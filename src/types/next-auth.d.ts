@@ -1,6 +1,8 @@
 import NextAuth, { DefaultSession } from "next-auth";
 
+/** Legacy JWT value before Role enum migration; treat as Captain everywhere. */
 type FleetRole =
+  | "ADMIN"
   | "CAPTAIN"
   | "CHIEF_ENGINEER"
   | "FIRST_MATE"

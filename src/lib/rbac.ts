@@ -21,8 +21,9 @@ export type PermissionKey =
 type PermissionOverrides = Record<string, boolean> | null | undefined;
 
 /** Full org control (invite Captain, edit Captains, last-Captain checks). */
+/** `ADMIN` is accepted for JWTs issued before Role enum migration (same access as Captain). */
 export function isCaptain(role?: string) {
-  return role === "CAPTAIN";
+  return role === "CAPTAIN" || role === "ADMIN";
 }
 
 /** Bridge / department heads — manage crew & yachts, cannot assign or edit Captains. */

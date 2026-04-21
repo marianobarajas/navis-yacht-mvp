@@ -82,6 +82,14 @@ export const authOptions: NextAuthOptions = {
         token.isPlatformAdmin = Boolean(row?.isPlatformAdmin);
       }
     }
+    // Migrate stale JWT role string after Prisma Role enum changes (e.g. ADMIN → CAPTAIN).
+    if (token.id && token.role === "ADMIN") {
+      const row = await prisma.user.findUnique({
+        where: { id: token.id as string },
+        select: { role: true },
+      });
+      if (row?.role) token.role = row.role;
+    }
     return token;
   },
   async session({ session, token }) {
