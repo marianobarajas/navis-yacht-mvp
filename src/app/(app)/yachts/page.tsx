@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { listYachts } from "@/actions/yachts";
+import { prisma } from "@/lib/db";
 import { canCreateYacht } from "@/lib/rbac";
 
 import { YachtsList } from "./YachtsList";
@@ -10,7 +11,13 @@ export default async function YachtsPage() {
   const res = await listYachts();
 
   const role = (session?.user as any)?.role;
-  const canManage = !!session?.user && canCreateYacht(role);
+  const me = session?.user?.id
+    ? await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { permissionOverrides: true },
+      })
+    : null;
+  const canManage = !!session?.user && canCreateYacht(role, me?.permissionOverrides as Record<string, boolean> | null);
 
   const yachts = (res as any)?.data ?? [];
   const error = (res as any)?.error ?? null;

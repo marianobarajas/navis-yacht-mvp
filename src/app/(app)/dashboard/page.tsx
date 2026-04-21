@@ -1,9 +1,13 @@
 import { Suspense } from "react";
 import Link from "next/link";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/db";
 import { getDashboardStats } from "@/actions/dashboard";
 import { listWorkOrders } from "@/actions/workOrders";
 import { listCrew } from "@/actions/users";
 import { listYachts } from "@/actions/yachts";
+import { canCreateWorkOrder } from "@/lib/rbac";
 
 import { DashboardSprintPlanning } from "@/components/DashboardSprintPlanning";
 import { DashboardCalendarPreview } from "@/components/DashboardCalendarPreview";
@@ -51,6 +55,15 @@ function isSameDay(a: Date, b: Date) {
   );
 }
 async function DashboardContent() {
+  const session = await getServerSession(authOptions);
+  const me = session?.user?.id
+    ? await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { role: true, permissionOverrides: true },
+      })
+    : null;
+  const canAddTask = !!me && canCreateWorkOrder(me.role, me.permissionOverrides as Record<string, boolean> | null);
+
   const [statsRes, workOrdersRes, crewRes, yachtsRes] =
     await Promise.all([
       getDashboardStats(),
@@ -206,12 +219,14 @@ async function DashboardContent() {
               <h2 className="text-lg font-bold text-[var(--apple-text-primary)]">
                 Task Assignments
               </h2>
-              <Link href="/tasks" className={DASH_CTA}>
-                <svg className="h-4 w-4 drop-shadow" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                </svg>
-                Add Task
-              </Link>
+              {canAddTask ? (
+                <Link href="/tasks" className={DASH_CTA}>
+                  <svg className="h-4 w-4 drop-shadow" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                  Add Task
+                </Link>
+              ) : null}
             </div>
             <div className="mt-4">
               <DashboardSprintPlanning workOrders={workOrders} inline glass />

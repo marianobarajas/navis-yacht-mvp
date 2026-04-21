@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { isManagerOrAbove, canCreateWorkOrder } from "@/lib/rbac";
+import { isManagerOrAbove, canCreateCalendarEvent, canCreateWorkOrder } from "@/lib/rbac";
 import { requireOrganizationId } from "@/lib/organization";
 import { calendarEventOrgWhere } from "@/lib/calendarScopes";
 import CalendarView from "./CalendarView";
@@ -21,8 +21,13 @@ export default async function CalendarPage({
   const initialDate = params.date ?? null;
 
   const role = (session.user as any).role as string;
-  const canCreate = isManagerOrAbove(role);
-  const canCreateTask = canCreateWorkOrder(role);
+  const me = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { permissionOverrides: true },
+  });
+  const overrides = me?.permissionOverrides as Record<string, boolean> | null;
+  const canCreate = isManagerOrAbove(role) && canCreateCalendarEvent(role, overrides);
+  const canCreateTask = canCreateWorkOrder(role, overrides);
 
   const [events, tasks, yachts, users] = await Promise.all([
     prisma.calendarEvent.findMany({

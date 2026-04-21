@@ -2,9 +2,10 @@ import { Suspense } from "react";
 import { getServerSession } from "next-auth";
 import type { Role } from "@prisma/client";
 import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/db";
 import { listCrew } from "@/actions/users";
 import { listYachts } from "@/actions/yachts";
-import { isManagerOrAbove } from "@/lib/rbac";
+import { canCreateUser, isManagerOrAbove } from "@/lib/rbac";
 import { CrewAddMemberCard } from "./CrewAddMemberCard";
 import { CrewMembersTable, type CrewTableRow } from "./CrewMembersTable";
 
@@ -23,6 +24,11 @@ export default async function CrewPage({
   const sessionRole = (session.user as { role?: Role }).role ?? "DECKHAND_1";
   const canManage = isManagerOrAbove(sessionRole);
   const allowCaptainRole = sessionRole === "CAPTAIN";
+  const me = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { permissionOverrides: true },
+  });
+  const canAddCrew = canCreateUser(sessionRole, me?.permissionOverrides as Record<string, boolean> | null);
 
   const [crewRes, yachtsRes] = await Promise.all([
     listCrew(
@@ -68,7 +74,7 @@ export default async function CrewPage({
           <div className="mt-8 h-64 animate-pulse rounded-[var(--apple-radius-lg)] bg-[var(--apple-bg-elevated)]" />
         }
       >
-        {canManage ? (
+        {canManage && canAddCrew ? (
           <div className="mt-6">
             <CrewAddMemberCard yachts={yachts} allowCaptainRole={allowCaptainRole} />
           </div>

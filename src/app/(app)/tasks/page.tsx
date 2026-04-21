@@ -71,7 +71,11 @@ export default async function TasksPage({
   const params = await searchParams;
 
   const role = (session.user as any).role;
-  const canCreate = canCreateWorkOrder(role);
+  const me = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { permissionOverrides: true },
+  });
+  const canCreate = canCreateWorkOrder(role, me?.permissionOverrides as Record<string, boolean> | null);
 
   const filters = {
     status: params.status as import("@prisma/client").WorkOrderStatus | undefined,

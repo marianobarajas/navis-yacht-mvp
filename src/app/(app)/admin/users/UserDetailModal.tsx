@@ -30,10 +30,15 @@ const ALL_PERMISSIONS: { id: string; label: string }[] = [
   { id: "create_logs", label: "Create logs" },
   { id: "update_task_status", label: "Update task status" },
   { id: "view_documents_assigned_yachts", label: "View documents for assigned yachts" },
+  { id: "create_task_button", label: "Show + Add Task buttons" },
+  { id: "create_crew_button", label: "Show + Add Crew buttons" },
+  { id: "create_yacht_button", label: "Show + Add Yacht buttons" },
+  { id: "create_calendar_event_button", label: "Show + Add Event buttons" },
+  { id: "create_folder_button", label: "Show + Add Folder buttons" },
 ];
 
-const PERM_CAPTAIN = ["all_permissions", "manage_users_yachts", "create_assign_tasks", "full_system_access"];
-const PERM_MANAGER = ["manage_yachts_crew", "create_assign_tasks", "view_all_logs_documents", "manage_team_members"];
+const PERM_CAPTAIN = ["all_permissions", "manage_users_yachts", "create_assign_tasks", "full_system_access", "manage_yachts_crew", "view_all_logs_documents", "manage_team_members", "view_assigned_yachts", "create_logs", "update_task_status", "view_documents_assigned_yachts", "create_task_button", "create_crew_button", "create_yacht_button", "create_calendar_event_button", "create_folder_button"];
+const PERM_MANAGER = ["manage_yachts_crew", "create_assign_tasks", "view_all_logs_documents", "manage_team_members", "create_task_button", "create_crew_button", "create_yacht_button", "create_calendar_event_button", "create_folder_button"];
 const PERM_CREW = ["view_assigned_yachts", "create_logs", "update_task_status", "view_documents_assigned_yachts"];
 
 const ROLE_DEFAULT_PERMISSIONS: Record<string, string[]> = {

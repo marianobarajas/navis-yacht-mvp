@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth";
 import Link from "next/link";
 import { authOptions } from "@/lib/auth";
-import { isManagerOrAbove } from "@/lib/rbac";
+import { canCreateFolder, isManagerOrAbove } from "@/lib/rbac";
 import { listFolders } from "@/actions/documents";
 import { prisma } from "@/lib/db";
 import { requireOrganizationId } from "@/lib/organization";
@@ -18,7 +18,11 @@ export default async function DocumentsPage() {
   if (!organizationId) throw new Error("Unauthorized");
 
   const role = (session.user as any).role;
-  const canManageFolders = isManagerOrAbove(role);
+  const me = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { permissionOverrides: true },
+  });
+  const canManageFolders = isManagerOrAbove(role) && canCreateFolder(role, me?.permissionOverrides as Record<string, boolean> | null);
 
   const [foldersRes, yachts] = await Promise.all([
     listFolders(),

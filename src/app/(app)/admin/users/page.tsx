@@ -1,8 +1,10 @@
 import { getServerSession } from "next-auth";
 import type { Role } from "@prisma/client";
 import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/db";
 import { listUsers } from "@/actions/users";
 import { listYachts } from "@/actions/yachts";
+import { canCreateUser } from "@/lib/rbac";
 import { CrewAddMemberCard } from "../../crew/CrewAddMemberCard";
 import { AdminUsersTable } from "./AdminUsersTable";
 
@@ -10,6 +12,13 @@ export default async function AdminUsersPage() {
   const session = await getServerSession(authOptions);
   const actorRole = ((session?.user as { role?: Role })?.role ?? "") as string;
   const actorUserId = session?.user?.id ?? "";
+  const me = session?.user?.id
+    ? await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { permissionOverrides: true },
+      })
+    : null;
+  const canAddCrew = canCreateUser(actorRole, me?.permissionOverrides as Record<string, boolean> | null);
   const res = await listUsers();
 
   const yachtsRes = !res.error ? await listYachts() : null;
@@ -25,7 +34,7 @@ export default async function AdminUsersPage() {
 
       {res.error ? <p className="mt-3 text-base text-red-600">{res.error}</p> : null}
 
-      {!res.error ? (
+      {!res.error && canAddCrew ? (
         <div className="mt-6">
           <CrewAddMemberCard yachts={yachts} allowCaptainRole={actorRole === "CAPTAIN"} />
         </div>

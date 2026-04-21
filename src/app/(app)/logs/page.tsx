@@ -29,7 +29,11 @@ export default async function LogsPage({
 
   const params = await searchParams;
   const role = (session.user as any).role as string;
-  const canCreateTask = canCreateWorkOrder(role);
+  const me = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { permissionOverrides: true },
+  });
+  const canCreateTask = canCreateWorkOrder(role, me?.permissionOverrides as Record<string, boolean> | null);
 
   const [yachtsRes, users] = await Promise.all([
     listYachts(),
