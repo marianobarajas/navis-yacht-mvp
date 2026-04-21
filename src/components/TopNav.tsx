@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { markNotificationRead } from "@/actions/notifications";
 import { ROLE_LABELS } from "@/lib/crew";
-import { isCaptain } from "@/lib/rbac";
 
 export type NavNotification = {
   id: string;
@@ -54,14 +53,16 @@ export function TopNav({
   const r = (user as { role?: string | null })?.role ?? null;
   const roleLabel = platformMode
     ? "Platform"
-    : r && r in ROLE_LABELS
-      ? ROLE_LABELS[r as keyof typeof ROLE_LABELS]
-      : r
-        ? r
-            .toLowerCase()
-            .replace(/_/g, " ")
-            .replace(/\b\w/g, (c) => c.toUpperCase())
-        : "User";
+    : r === "ADMIN"
+      ? "Captain"
+      : r && r in ROLE_LABELS
+        ? ROLE_LABELS[r as keyof typeof ROLE_LABELS]
+        : r
+          ? r
+              .toLowerCase()
+              .replace(/_/g, " ")
+              .replace(/\b\w/g, (c) => c.toUpperCase())
+          : "User";
   const profileImage = user?.profileImage ?? null;
 
   const headerSubtitle = platformMode ? "Platform" : organizationName?.trim() || null;
@@ -202,7 +203,9 @@ export function TopNav({
                 View Profile
               </Link>
             ) : null}
-            {!platformMode && isCaptain((user as { role?: string | null })?.role ?? undefined) ? (
+            {!platformMode &&
+            (((user as { role?: string | null })?.role ?? undefined) === "CAPTAIN" ||
+              ((user as { role?: string | null })?.role ?? undefined) === "ADMIN") ? (
               <Link
                 href="/admin/users"
                 className="block px-4 py-2.5 text-sm text-[var(--apple-text-primary)] transition-colors hover:bg-[var(--apple-bg-subtle)]"
