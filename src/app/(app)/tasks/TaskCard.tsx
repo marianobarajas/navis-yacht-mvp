@@ -62,6 +62,12 @@ export function TaskCard({ wo }: TaskCardProps) {
     router.push(`/tasks/${wo.id}`);
   }
 
+  function goComments(e: React.SyntheticEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    router.push(`/tasks/${wo.id}#comments`);
+  }
+
   return (
     <article
       role="button"
@@ -119,7 +125,13 @@ export function TaskCard({ wo }: TaskCardProps) {
           <EditableStatusCell workOrderId={wo.id} currentStatus={wo.status} size="lg" />
         </div>
         <div className="flex items-center gap-3 text-[var(--apple-text-tertiary)]">
-          <span className="flex items-center gap-1 text-xs font-medium" title="Attachments">
+          <button
+            type="button"
+            onClick={goComments}
+            className="flex items-center gap-1 text-xs font-medium hover:text-[var(--apple-accent)]"
+            title="Open comments"
+            aria-label="Open comments section"
+          >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
               <path
                 strokeLinecap="round"
@@ -130,8 +142,14 @@ export function TaskCard({ wo }: TaskCardProps) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
             {attachments}
-          </span>
-          <span className="flex items-center gap-1 text-xs font-medium" title="Comments">
+          </button>
+          <button
+            type="button"
+            onClick={goComments}
+            className="flex items-center gap-1 text-xs font-medium hover:text-[var(--apple-accent)]"
+            title="Open comments"
+            aria-label="Open comments section"
+          >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
               <path
                 strokeLinecap="round"
@@ -141,7 +159,7 @@ export function TaskCard({ wo }: TaskCardProps) {
               />
             </svg>
             {comments}
-          </span>
+          </button>
         </div>
       </div>
     </article>

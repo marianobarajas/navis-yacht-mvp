@@ -137,7 +137,7 @@ const order = await prisma.workOrder.findFirst({
         }}
       />
 
-      <div>
+      <div id="comments">
         <TaskCommentsPanel
           workOrderId={order.id}
           comments={order.comments}
