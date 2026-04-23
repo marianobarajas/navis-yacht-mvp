@@ -24,6 +24,10 @@ const ICON_WELL =
   "flex h-10 w-10 items-center justify-center rounded-lg border border-white/50 bg-white/40 shadow-md shadow-black/30 ring-2 ring-white/25 backdrop-blur-sm";
 const HERO_LINK =
   "text-xs font-semibold text-white/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.65)] transition-colors hover:text-white";
+/** Avoid icon / CTA overlap on narrow 2-col cards (flex min-width:auto overflow). */
+const METRIC_CARD_HEADER =
+  "grid grid-cols-[auto_minmax(0,1fr)] items-start gap-2";
+const METRIC_CARD_CTA = `${HERO_LINK} min-w-0 justify-self-end text-right leading-snug break-words`;
 const DASH_CTA =
   "inline-flex items-center gap-2 rounded-lg border border-white/25 bg-[var(--apple-accent)] px-4 py-2 text-sm font-semibold text-white shadow-md shadow-black/25 ring-1 ring-white/20 transition-colors hover:bg-[var(--apple-accent-hover)] hover:ring-white/35";
 
@@ -144,13 +148,13 @@ async function DashboardContent() {
       {/* Summary cards row - reference style */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Link href="/tasks" className={`${GLASS_PANEL} block p-4`}>
-          <div className="flex items-start justify-between">
-            <div className={`${ICON_WELL} bg-rose-400/35`}>
+          <div className={METRIC_CARD_HEADER}>
+            <div className={`${ICON_WELL} shrink-0 bg-rose-400/35`}>
               <svg className="h-5 w-5 text-rose-50 drop-shadow-[0_1px_3px_rgba(0,0,0,0.75)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.25}>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </div>
-            <span className={HERO_LINK}>View All →</span>
+            <span className={METRIC_CARD_CTA}>View All →</span>
           </div>
           <p className="mt-2 text-sm font-medium text-[var(--apple-text-secondary)]">Tasks</p>
           <p className="mt-0.5 text-xl font-bold text-[var(--apple-text-primary)]">
@@ -162,13 +166,13 @@ async function DashboardContent() {
           </p>
         </Link>
         <Link href="/calendar" className={`${GLASS_PANEL} block p-4`}>
-          <div className="flex items-start justify-between">
-            <div className={`${ICON_WELL} bg-sky-400/35`}>
+          <div className={METRIC_CARD_HEADER}>
+            <div className={`${ICON_WELL} shrink-0 bg-sky-400/35`}>
               <svg className="h-5 w-5 text-sky-50 drop-shadow-[0_1px_3px_rgba(0,0,0,0.75)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.25}>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
             </div>
-            <span className={HERO_LINK}>View Schedule →</span>
+            <span className={METRIC_CARD_CTA}>View Schedule →</span>
           </div>
           <p className="mt-2 text-sm font-medium text-[var(--apple-text-secondary)]">Calendar</p>
           <p className="mt-0.5 text-xl font-bold text-sky-100 drop-shadow-[0_1px_3px_rgba(0,0,0,0.75)]">
@@ -176,13 +180,13 @@ async function DashboardContent() {
           </p>
         </Link>
         <Link href="/logs" className={`${GLASS_PANEL} block p-4`}>
-          <div className="flex items-start justify-between">
-            <div className={`${ICON_WELL} bg-emerald-400/35`}>
+          <div className={METRIC_CARD_HEADER}>
+            <div className={`${ICON_WELL} shrink-0 bg-emerald-400/35`}>
               <svg className="h-5 w-5 text-emerald-50 drop-shadow-[0_1px_3px_rgba(0,0,0,0.75)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.25}>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <span className={HERO_LINK}>View All →</span>
+            <span className={METRIC_CARD_CTA}>View All →</span>
           </div>
           <p className="mt-2 text-sm font-medium text-[var(--apple-text-secondary)]">Recent Expenses</p>
           <p className="mt-0.5 text-xl font-bold text-emerald-100 drop-shadow-[0_1px_4px_rgba(0,0,0,0.85)]">
@@ -190,13 +194,13 @@ async function DashboardContent() {
           </p>
         </Link>
         <Link href="/documents" className={`${GLASS_PANEL} block p-4`}>
-          <div className="flex items-start justify-between">
-            <div className={`${ICON_WELL} bg-amber-200/40`}>
+          <div className={METRIC_CARD_HEADER}>
+            <div className={`${ICON_WELL} shrink-0 bg-amber-200/40`}>
               <svg className="h-5 w-5 text-amber-950 drop-shadow-[0_1px_2px_rgba(255,255,255,0.35)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.25}>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </div>
-            <span className={HERO_LINK}>View Reports →</span>
+            <span className={METRIC_CARD_CTA}>View Reports →</span>
           </div>
           <p className="mt-2 text-sm font-medium text-[var(--apple-text-secondary)]">Reports</p>
           <p className="mt-0.5 text-sm font-medium text-[var(--apple-text-primary)]">Documents &amp; folders</p>
